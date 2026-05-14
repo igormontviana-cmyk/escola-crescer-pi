@@ -14,7 +14,8 @@ Repositório técnico focado em backend, SQL e estrutura de pastas, desenvolvido
 
 ## Protótipo de Interface
 
-🔗 **Figma:** [Inserir link do Figma aqui]
+🔗 **Figma:** https://www.figma.com/proto/pTaUjFPVdbAJOu1E5UMvge/projeto-integrativo?node-id=202-123&starting-point-node-id=202%3A123&t=8YZ4ZlCdkTQjPb18-
+
 
 ---
 
