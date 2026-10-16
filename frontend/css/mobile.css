@@ -1,0 +1,206 @@
+/* =========================================================
+   Versão mobile: experiência adaptada (não só "encolhida")
+   - navegação inferior por perfil, cabeçalho compacto
+   - chamada otimizada para marcar presença com o polegar
+   - boletim em cards, modais como bottom sheet
+   ========================================================= */
+
+/* Elementos exclusivos do mobile ficam ocultos no desktop */
+.m-brand, .m-only, .bottom-nav, .m-cards { display: none; }
+
+@media (max-width: 900px) {
+  body { font-size: 15px; background: var(--bg); }
+  .sidebar, .scrim { display: none !important; }
+  .main { margin-left: 0; }
+
+  /* Cabeçalho compacto */
+  .topbar { position: sticky; top: 0; padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top)); gap: 8px; background: rgba(255, 255, 255, .92); border-bottom: 1px solid var(--line); box-shadow: 0 1px 8px rgba(11, 37, 69, .05); }
+  .m-brand { display: block; flex: none; }
+  .m-brand .logo-img { width: 128px; }
+  .m-only { display: grid; }
+  .search { display: none; }
+  .topbar.searching .search { display: block; position: absolute; left: 12px; right: 12px; top: calc(100% + 8px); flex: none; animation: pop .16s var(--ease); }
+  .topbar.searching .search input { background: #fff; box-shadow: var(--sh-lg); border-color: var(--line-strong); }
+  .top-actions { gap: 8px; }
+  .icon-btn { width: 42px; height: 42px; border-radius: 12px; }
+  .icon-btn .dot { top: 9px; right: 10px; }
+  .user-chip { height: 42px; padding: 0 4px; border-radius: 12px; }
+  .user-chip .who { display: none; }
+  .dropdown { position: fixed; top: 64px; left: 12px; right: 12px; min-width: 0 !important; }
+
+  /* Navegação inferior */
+  .bottom-nav {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+    background: var(--navy-800); padding: 6px 6px max(8px, env(safe-area-inset-bottom));
+    box-shadow: 0 -6px 24px rgba(0, 26, 51, .22);
+  }
+  .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px 5px; border-radius: 12px; color: rgba(255, 255, 255, .55); font-size: 11px; font-weight: 700; text-decoration: none; position: relative; min-height: 52px; transition: color .2s; }
+  .bottom-nav a .i { width: 22px; height: 22px; }
+  .bottom-nav a span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .bottom-nav a.active { color: #fff; }
+  .bottom-nav a.active::before { content: ''; position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 52px; height: 30px; border-radius: 15px; background: var(--navy-600); z-index: -1; }
+  .bottom-nav a.active .i { stroke-width: 2.3; }
+  .content { padding: 16px 16px 112px; }
+  .app-foot { display: none; }
+
+  /* Tipografia e cabeçalhos de página */
+  .page-head { margin-bottom: 16px; padding-bottom: 12px; align-items: flex-start; }
+  .page-head h1 { font-size: 24px; }
+  .page-head p { font-size: 14px; }
+  .page-head > .btn, .page-head > .row .btn { height: 40px; font-size: 14px; }
+  .section-title { font-size: 22px; }
+  .crumb { min-height: 32px; }
+
+  /* Página principal */
+  .quick { flex-wrap: nowrap; overflow-x: auto; gap: 10px; margin: 0 -16px 20px; padding: 2px 16px 6px; scrollbar-width: none; }
+  .quick::-webkit-scrollbar { display: none; }
+  .quick .btn { min-width: 0; flex: 0 0 auto; height: 46px; padding: 0 18px; border-radius: 12px; }
+  .avisos { padding: 12px; min-height: 0; border-radius: var(--r-md); }
+  .aviso { padding: 14px; grid-template-columns: 22px 1fr 24px; }
+  .aviso h3 { font-size: 17px; }
+  .aviso p { font-size: 14px; }
+  .check { width: 24px; height: 24px; }
+  .cal { padding: 20px 12px 16px; }
+  .cal-day { width: 38px; height: 38px; font-size: 15px; }
+  .events h2 { font-size: 22px; margin-top: 24px; }
+
+  /* Lista de alunos: linha compacta, status visível */
+  .filterbar { padding: 14px; gap: 10px; border-radius: var(--r-md) var(--r-md) 0 0; }
+  .filterbar .select { flex: 1 1 130px; }
+  .filterbar .select select { width: 100%; font-size: 16px; }
+  .filterbar .search { display: block; flex: 1 1 100%; }
+  .students { padding: 8px 12px 16px; border-radius: 0 0 var(--r-md) var(--r-md); }
+  .st-row { grid-template-columns: 76px minmax(0, 1fr) 72px; grid-template-areas: 'av nm rg' 'av st rg'; gap: 6px 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .st-row:last-child { border-bottom: 0; }
+  .st-row > .avatar { grid-area: av; }
+  .st-row > .pill:not(.status):not(.perfil) { grid-area: nm; height: 34px; font-size: 15px; padding: 0 14px; }
+  .st-row .pill.status { display: flex; grid-area: st; height: 26px; font-size: 12px; border-width: 1.5px; justify-self: start; padding: 0 12px; box-shadow: none; }
+  .st-row .perfil { display: none; }
+  .st-row > a:last-child { grid-area: rg; justify-self: end; }
+
+  /* Detalhes do aluno */
+  .g-detail { gap: 20px; }
+  .g-detail .photo { max-width: 240px; margin: 0 auto; }
+  .box-pill { height: 44px; font-size: 18px; }
+  .activity { min-height: 0; font-size: 13px; }
+  .subj-search input { height: 48px; font-size: 17px; padding: 0 20px; }
+  .subj-table { margin-top: 20px; }
+  .subj-head { font-size: 16px; }
+  .subj-row { margin-top: 10px; }
+  .subj-row > div { height: 48px; font-size: 16px; }
+  .subj-row > div:first-child { line-height: 48px; text-align: left; padding: 0 14px; }
+  .g-detail .side-metrics .ring-wrap { transform: scale(.85); }
+  .metric-label { width: 132px; height: 40px; font-size: 18px; }
+  .g-detail .btn-grad { width: 100%; justify-content: center; }
+
+  /* Notas: seleção de turma */
+  .class-switch { margin: 4px 0 24px; gap: 6px; }
+  .class-switch .tri { width: 40px; }
+  .class-switch .tri svg { width: 28px; height: 44px; }
+  .class-name { height: 56px; font-size: 22px; }
+  .subjects { gap: 12px; }
+  .subject-btn { width: 100%; min-height: 54px; font-size: 19px; }
+
+  /* Tabela de notas: rolagem horizontal com 1ª coluna fixa */
+  .grades { border-radius: var(--r-md); }
+  .grades th, .grades td { font-size: 15px; padding: 10px 8px; }
+  .grades th:first-child, .grades td:first-child { position: sticky; left: 0; z-index: 1; padding-left: 14px; box-shadow: 2px 0 4px rgba(0, 0, 0, .06); }
+  .grades th:first-child { background: #fff; }
+  .grades td:first-child { background: #eef0f6; max-width: 168px; overflow: hidden; text-overflow: ellipsis; }
+  .grades input { width: 58px; font-size: 16px; }
+
+  /* Chamada: lista pensada para o polegar */
+  .month-bar { height: 48px; padding: 0 4px; border-radius: 12px; }
+  .month-bar button { font-size: 0; padding: 10px; }
+  .month-bar button .i { width: 22px; height: 22px; }
+  .month-bar b { font-size: 19px; }
+  .day-card { padding: 16px 12px; border-radius: 14px; }
+  .day-card > h4 { flex-wrap: wrap; font-size: 15px; }
+  .lessons { grid-template-columns: 1fr; gap: 12px; padding: 0; }
+  .lesson { border-left-width: 6px; border-radius: 8px; padding: 12px 14px; }
+  .lesson h5 { font-size: 17px; }
+  .lesson .btn { width: 100%; justify-content: center; height: 42px; }
+  .att-tools { margin: 16px 0 20px; gap: 12px; }
+  .date-field { flex: 1; }
+  .att-tools .spacer { display: none; }
+  .att-summary { width: 100%; margin: 0; }
+  table.att { min-width: 0; }
+  table.att thead th:nth-child(2), table.att thead th:nth-child(4), table.att tbody td:nth-child(2), table.att tbody td:nth-child(4) { display: none; }
+  table.att tbody tr { cursor: pointer; }
+  table.att td { padding: 12px 8px; font-size: 14px; }
+  table.att .t-name { font-size: 15px; }
+  .save-bar { position: sticky; bottom: 84px; z-index: 5; margin-top: 20px !important; }
+  .save-bar .btn { width: 100%; justify-content: center; box-shadow: 0 8px 20px rgba(0, 33, 71, .3); }
+  .save-bar .muted { display: none; }
+
+  /* FAQ */
+  .faq-q { font-size: 18px; padding: 18px 4px; gap: 12px; }
+  .faq-q .circle { width: 34px; height: 34px; }
+  .faq-a p, .faq-a ol { font-size: 15px; }
+
+  /* KPIs e gráficos */
+  .kpi { padding: 16px; }
+  .kpi .val { font-size: 30px; }
+  .kpi .ico { width: 34px; height: 34px; top: 14px; right: 14px; }
+  .chart-box { height: 240px; padding: 8px 12px 16px; }
+  .chart-box.tall { height: 280px; }
+  .card-head { padding: 16px 16px 0; }
+  .hero { padding: 22px; gap: 16px; }
+  .hero h2 { font-size: 24px; }
+  .tabs { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .tabs button { flex: 0 0 auto; }
+  .filters .select.light { flex: 1 1 100%; }
+  .filters .select.light select { width: 100%; }
+
+  /* Tabelas genéricas: rolagem com largura mínima legível */
+  .card > .table-wrap > table.t { min-width: 640px; }
+
+  /* Modais como bottom sheet */
+  .overlay { place-items: end center; padding: 0; }
+  .modal { width: 100% !important; max-height: 92vh; border-radius: 20px 20px 0 0; padding-bottom: env(safe-area-inset-bottom); animation: sheet .3s var(--ease) both; }
+  .modal-head { padding: 20px 20px 0; }
+  .modal-head::before { content: ''; position: absolute; left: 50%; transform: translateX(-50%); margin-top: -12px; width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+  .modal-body { padding: 16px 20px; }
+  .modal-foot { padding: 0 20px 20px; }
+  .modal-foot .btn { flex: 1; justify-content: center; }
+  .forgot { margin: 72px 12px 24px; padding: 84px 24px 28px; align-self: center; }
+  .forgot h3 { font-size: 26px; }
+  .occ-modal { width: 100%; border-radius: 20px 20px 0 0; padding: 20px 16px 24px; max-height: 94vh; overflow: auto; }
+  .occ-top { padding-left: 0; gap: 16px; }
+  .occ-top .pills { max-width: none; width: 100%; }
+  .occ-top .box-pill { font-size: 17px; }
+  .occ-area textarea { min-height: 200px; font-size: 17px; }
+  .close-dot { top: 12px; right: 12px; }
+  .toasts { bottom: 92px; }
+
+  /* Login */
+  .login-card .logo-img.lg { width: 200px; }
+}
+
+@media (max-width: 600px) {
+  .desk-only { display: none !important; }
+  .m-cards { display: flex; flex-direction: column; gap: 12px; }
+  .m-card { padding: 16px; }
+  .m-card header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .m-card header b { color: var(--ink); font-size: 16px; }
+  .m-bims { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .m-bims span { background: var(--gray-50); border-radius: 10px; padding: 8px 4px; text-align: center; }
+  .m-bims small { display: block; font-size: 11px; color: var(--muted); font-weight: 700; }
+  .m-bims b { font-size: 18px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .m-bims b.low { color: var(--bad); }
+  .m-card footer { display: flex; justify-content: space-between; margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .m-card footer b { color: var(--ink); }
+  .g-3, .g-4 { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .g-3 > .freq-card { grid-column: 1 / -1; }
+  .kpi .val { font-size: 26px; }
+  .kpi .ico { display: none; }
+  .hero > .ring-wrap { align-self: flex-start; }
+  .g-3 > :last-child:nth-child(odd), .g-4 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .kpi .chip { white-space: normal; }
+  .login { padding: 20px 12px 56px; }
+  .demo-grid button { padding: 10px 4px; }
+  .uline-field input { font-size: 16px; } /* evita zoom automático no iOS */
+  .search input, .input, .field select, .field textarea { font-size: 16px; }
+}
+
+@keyframes sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
