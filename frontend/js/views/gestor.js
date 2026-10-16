@@ -61,20 +61,23 @@
         bars: D.ESTAT.map((e) => [e.disc, e.media]),
         line: D.FREQ_MENSAL,
         pts: D.DISPERSAO,
-        risco: D.ALUNOS.filter((a) => EC.emRisco(a.id)),
+        risco: EC.alunos().filter((a) => a.ativo !== false && EC.emRisco(a.id)),
       };
     }
     const t = EC.turma(turma), al = EC.alunosDaTurma(turma);
-    const medias = al.map((a) => EC.mediaGeral(a.id));
+    const n = al.length || 1;
+    // Alunos recém-matriculados (sem nota) entram na frequência, mas não nas médias
+    const comNota = al.map((a) => ({ a, m: EC.mediaGeral(a.id) })).filter((x) => x.m != null);
     const freqs = al.map((a) => a.freq);
-    const sitc = (s) => Math.round((medias.filter((m) => EC.situacao(m) === s).length / al.length) * 100);
-    const fm = EC.avg(freqs);
+    const sitc = (s) => Math.round((comNota.filter((x) => EC.situacao(x.m) === s).length / n) * 100);
+    const fm = freqs.length ? EC.avg(freqs) : 0;
+    const mediaDe = (d) => { const v = al.map((a) => EC.mediaDisc(a.id, d)).filter((m) => m != null); return v.length ? D.r1(EC.avg(v)) : 0; };
     return {
-      k: { aprovacao: sitc('Aprovado'), frequencia: Math.round(fm), risco: Math.round((al.filter((a) => EC.emRisco(a.id)).length / al.length) * 100), correlacao: D.r1(pearson(freqs, medias) * 10) / 10 },
+      k: { aprovacao: sitc('Aprovado'), frequencia: Math.round(fm), risco: Math.round((al.filter((a) => EC.emRisco(a.id)).length / n) * 100), correlacao: D.r1(pearson(comNota.map((x) => x.a.freq), comNota.map((x) => x.m)) * 10) / 10 },
       sit: [['Aprovados', sitc('Aprovado'), 'ok'], ['Recuperação', sitc('Recuperação'), 'warn'], ['Reprovados', sitc('Reprovado'), 'bad']],
-      bars: t.disciplinas.map((d) => [EC.disc(d).curto, D.r1(EC.avg(al.map((a) => EC.mediaDisc(a.id, d))))]),
+      bars: t.disciplinas.map((d) => [EC.disc(d).curto, mediaDe(d)]),
       line: D.FREQ_MENSAL.map(([m, v]) => [m, Math.round(Math.max(0, Math.min(100, v + (fm - 83))))]),
-      pts: al.map((a, i) => ({ x: a.freq, y: medias[i], nome: a.nome })),
+      pts: comNota.map((x) => ({ x: x.a.freq, y: x.m, nome: x.a.nome })),
       risco: al.filter((a) => EC.emRisco(a.id)),
     };
   }
@@ -154,7 +157,8 @@
       else {
         const t = EC.turma(turma), al = EC.alunosDaTurma(turma);
         rows = t.disciplinas.map((d) => {
-          const ms = al.map((a) => EC.mediaDisc(a.id, d));
+          const ms = al.map((a) => EC.mediaDisc(a.id, d)).filter((x) => x != null);
+          if (!ms.length) return [EC.disc(d).nome, 0, 0, 0, 0, 'Turma ainda sem notas lançadas.'];
           const m = EC.avg(ms), dp = desvio(ms);
           return [EC.disc(d).nome, D.r1(m), D.r1(dp), Math.min(...ms), Math.max(...ms), dp >= 2.5 ? 'Alta dispersão: turma heterogênea nesta disciplina.' : m < 6 ? 'Média abaixo de 6,0: avaliar reforço.' : 'Desempenho estável.'];
         });
@@ -198,15 +202,15 @@
         after(root) {
           let mot = '';
           const sel = root.querySelector('#Turma');
-          const lista = () => D.ALUNOS.filter((a) => EC.emRisco(a.id) && (!sel.value || a.turma === sel.value))
-            .map((a) => ({ a, m: EC.mediaGeral(a.id), f: a.freq < 75, n: EC.mediaGeral(a.id) < 5 }))
+          const lista = () => EC.alunos().filter((a) => a.ativo !== false && EC.emRisco(a.id) && (!sel.value || a.turma === sel.value))
+            .map((a) => { const m = EC.mediaGeral(a.id); return { a, m, f: a.freq < 75, n: m != null && m < 5 }; })
             .filter((x) => !mot || (mot === 'f' ? x.f : x.n))
             .sort((x, y) => x.a.freq - y.a.freq);
           function draw() {
             const L = lista();
             root.querySelector('#rt').innerHTML = `<thead><tr><th>Aluno</th><th>Turma</th><th class="c">Frequência</th><th class="c">Média</th><th>Motivo</th><th class="r"></th></tr></thead>
               <tbody>${L.map(({ a, m, f, n }) => `<tr><td><span class="t-name">${EC.avatar(a, 36)}${esc(a.nome)}</span></td><td>${EC.turma(a.turma).nome}</td>
-                <td class="c">${EC.ring(a.freq, { size: 44, stroke: 6, tone: EC.toneFreq(a.freq), fs: 11 })}</td><td class="c tnum" style="color:${m < 5 ? 'var(--bad)' : 'inherit'}">${EC.fmtNota(m)}</td>
+                <td class="c">${EC.ring(a.freq, { size: 44, stroke: 6, tone: EC.toneFreq(a.freq), fs: 11 })}</td><td class="c tnum" style="color:${m != null && m < 5 ? 'var(--bad)' : 'inherit'}">${EC.fmtNota(m)}</td>
                 <td>${f ? EC.chip('Frequência < 75%', 'bad', 'warn') : ''} ${n ? EC.chip('Média < 5,0', 'warn', 'alert') : ''}</td>
                 <td class="r"><a class="btn btn-ghost btn-sm" href="#/alunos/${a.id}">Perfil</a></td></tr>`).join('') || `<tr><td colspan="6">${EC.empty('Nenhum aluno em risco com esses filtros.', 'check')}</td></tr>`}</tbody>`;
             EC.animateRings(root);

@@ -19,9 +19,9 @@ window.EC = window.EC || {};
 
   const NAV = {
     professor: [['/inicio', 'Página Principal', 'home'], ['/alunos', 'Lista de Alunos', 'users'], ['/notas', 'Notas', 'chart'], ['/chamada', 'Chamada', 'clipboard'], ['/avaliacoes', 'Avaliações', 'fileCheck']],
-    aluno: [['/inicio', 'Início', 'home'], ['/boletim', 'Boletim', 'chart'], ['/frequencia', 'Frequência', 'clipboard'], ['/mural', 'Mural', 'megaphone']],
-    coordenador: [['/inicio', 'Início', 'home'], ['/usuarios', 'Usuários', 'users'], ['/turmas', 'Turmas', 'layers'], ['/disciplinas', 'Disciplinas', 'book'], ['/mural', 'Mural', 'megaphone']],
-    gestor: [['/dashboard', 'Dashboard', 'grid'], ['/relatorios', 'Relatórios', 'fileText'], ['/risco', 'Alunos em Risco', 'warn'], ['/auditoria', 'Auditoria LGPD', 'shield'], ['/mural', 'Mural', 'megaphone']],
+    aluno: [['/inicio', 'Início', 'home'], ['/boletim', 'Boletim', 'chart'], ['/frequencia', 'Frequência', 'clipboard'], ['/ouvidoria', 'Ouvidoria', 'chat'], ['/mural', 'Mural', 'megaphone']],
+    coordenador: [['/inicio', 'Início', 'home'], ['/usuarios', 'Usuários', 'users'], ['/turmas', 'Turmas', 'layers'], ['/ouvidoria', 'Ouvidoria', 'chat'], ['/mural', 'Mural', 'megaphone'], ['/disciplinas', 'Disciplinas', 'book']],
+    gestor: [['/dashboard', 'Dashboard', 'grid'], ['/relatorios', 'Relatórios', 'fileText'], ['/risco', 'Alunos em Risco', 'warn'], ['/ouvidoria', 'Ouvidoria', 'chat'], ['/turmas', 'Turmas', 'layers'], ['/auditoria', 'Auditoria LGPD', 'shield'], ['/mural', 'Mural', 'megaphone']],
   };
   const HOME = { professor: '/inicio', aluno: '/inicio', coordenador: '/inicio', gestor: '/dashboard' };
   EC.home = (u) => HOME[u.perfil];
@@ -80,6 +80,8 @@ window.EC = window.EC || {};
       err.classList.remove('show');
       const c = cpf.value.replace(/\D/g, '');
       const user = Object.values(D.USUARIOS_DEMO).find((u) => u.cpf === c);
+      const inativo = user && (user.perfil === 'aluno' ? (EC.aluno(user.id) || {}).ativo === false : (EC.state.usuarios.find((x) => x.id === user.id) || {}).ativo === false);
+      if (inativo) { err.textContent = 'Usuário inativo. Procure a secretaria da escola.'; void err.offsetWidth; err.classList.add('show'); EC.log('Tentativa de login de usuário inativo', 'warn'); return; }
       if (c.length !== 11 || !senha.value) { err.textContent = 'Informe o CPF completo e a senha.'; void err.offsetWidth; err.classList.add('show'); return; }
       // Senha padrão = CPF (Figma: "Esqueceu sua senha?"). No sistema real, comparação via hash bcrypt (RN-006).
       if (!user || senha.value.replace(/\D/g, '') !== c) { err.textContent = 'CPF ou senha inválidos. Verifique os dados e tente novamente.'; void err.offsetWidth; err.classList.add('show'); EC.log('Tentativa de login com senha inválida', 'bad'); return; }
@@ -122,19 +124,24 @@ window.EC = window.EC || {};
         ['green', 'megaphone', 'Novo aviso no mural', 'Simulado do ENEM: 3º ano.', '#/mural'],
       ];
     }
+    const ouv = EC.ouvAbertas ? EC.ouvAbertas() : 0;
+    const nOuv = ['green', 'chat', 'Ouvidoria', ouv ? `${ouv} manifestação(ões) aguardando resposta.` : 'Nenhuma manifestação aguardando resposta.', '#/ouvidoria'];
     if (u.perfil === 'coordenador') {
       return [
+        nOuv,
         ['warn', 'warn', 'Alunos em risco', '12% dos alunos com frequência abaixo de 75%.', '#/inicio'],
         ['navy', 'layers', 'Grade curricular', '1ºEM - B atualizada hoje às 08:41.', '#/turmas'],
       ];
     }
     return [
       ['warn', 'warn', 'Alerta de frequência', 'Alunos em risco subiu para 12% (limiar 10%).', '#/risco'],
+      nOuv,
       ['red', 'shield', 'Tentativa de acesso inválida', 'Registrada às 09:30. Ver auditoria.', '#/auditoria'],
     ];
   }
   const NT = { red: ['var(--bad-bg)', 'var(--bad)'], warn: ['var(--warn-bg)', '#8a6200'], navy: ['var(--info-bg)', 'var(--navy-700)'], green: ['var(--ok-bg)', '#0f7a36'] };
 
+  const curto = (l) => l.replace('Página Principal', 'Início').replace('Lista de Alunos', 'Alunos').replace('Alunos em Risco', 'Risco').replace('Auditoria LGPD', 'Auditoria');
   function shell(u, active, inner) {
     const nav = NAV[u.perfil];
     const notes = notificacoes(u);
@@ -187,8 +194,10 @@ window.EC = window.EC || {};
           <footer class="app-foot">${I('shield', 'sm')} Escola Gente Miúda Crescer · Sistema Acadêmico · dados de alunos tratados conforme a LGPD (Art. 14 e 46)</footer>
         </div>
         <nav class="bottom-nav" aria-label="Navegação">
-          ${nav.slice(0, 5).map(([p, l, ic]) => `<a href="#${p}" class="${active === p ? 'active' : ''}">${I(ic)}<span>${l.replace('Página Principal', 'Início').replace('Lista de Alunos', 'Alunos').replace('Alunos em Risco', 'Risco').replace('Auditoria LGPD', 'Auditoria')}</span></a>`).join('')}
+          ${(nav.length > 5 ? nav.slice(0, 4) : nav).map(([p, l, ic]) => `<a href="#${p}" class="${active === p ? 'active' : ''}">${I(ic)}<span>${curto(l)}</span></a>`).join('')}
+          ${nav.length > 5 ? `<button class="${nav.slice(4).some(([p]) => p === active) ? 'active' : ''}" id="mais" aria-expanded="false">${I('more')}<span>Mais</span></button>` : ''}
         </nav>
+        ${nav.length > 5 ? `<div class="more-sheet" id="mais-sheet" role="menu">${nav.slice(4).map(([p, l, ic]) => `<a href="#${p}" role="menuitem" class="${active === p ? 'active' : ''}">${I(ic)}<span>${l}</span></a>`).join('')}</div>` : ''}
       </div>`;
   }
 
@@ -211,9 +220,17 @@ window.EC = window.EC || {};
         if (b === '#bell') btn.querySelector('.dot')?.remove();
       });
     });
-    document.onclick = (e) => { if (!e.target.closest('.dropdown')) app.querySelectorAll('.dropdown.open').forEach((x) => x.classList.remove('open')); if (!e.target.closest('#search')) app.querySelector('#search-results')?.classList.remove('open'); };
+    document.onclick = (e) => { if (!e.target.closest('.dropdown')) app.querySelectorAll('.dropdown.open, .more-sheet.open').forEach((x) => x.classList.remove('open')); if (!e.target.closest('#search')) app.querySelector('#search-results')?.classList.remove('open'); };
     app.querySelector('#reset-demo').addEventListener('click', async () => {
       if (await EC.confirm({ title: 'Restaurar dados?', text: 'Notas, chamadas, avisos e cadastros editados nesta demonstração voltarão ao estado original.', ok: 'Restaurar' })) EC.resetDemo();
+    });
+    const mais = app.querySelector('#mais');
+    if (mais) mais.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sh = app.querySelector('#mais-sheet');
+      const open = !sh.classList.contains('open');
+      sh.classList.toggle('open', open);
+      mais.setAttribute('aria-expanded', open);
     });
     app.querySelector('#search-toggle').addEventListener('click', () => { app.querySelector('.topbar').classList.toggle('searching'); app.querySelector('#q').focus(); });
     wireSearch(u);
@@ -232,7 +249,7 @@ window.EC = window.EC || {};
       const nv = norm(v);
       let items = pages.filter((p) => norm(p.t).includes(nv)).map((p) => `<a href="${p.href}"><span class="dd-ico" style="background:var(--gray-100);color:var(--navy-700)">${I(p.ic, 'sm')}</span><span>${esc(p.t)}<small>${p.s}</small></span></a>`);
       if (u.perfil !== 'aluno') {
-        items = items.concat(D.ALUNOS.filter((a) => norm(a.nome).includes(nv) || a.matricula.includes(v)).slice(0, 8)
+        items = items.concat(EC.alunos().filter((a) => norm(a.nome).includes(nv) || a.matricula.includes(v)).slice(0, 8)
           .map((a) => `<a href="#/alunos/${a.id}">${EC.avatar(a, 32)}<span>${esc(a.nome)}<small>${EC.turma(a.turma).nome} · Matrícula ${a.matricula}</small></span></a>`));
       } else {
         const t = EC.turma(EC.aluno(u.id).turma);
@@ -350,7 +367,8 @@ window.EC = window.EC || {};
 
   /* Mural (RF06): mensagens com conteúdo, autor e data */
   EC.avisosPara = (u) => {
-    const todos = EC.state.avisos.concat(D.AVISOS);
+    const fora = new Set(EC.state.avisosRemovidos || []);
+    const todos = EC.state.avisos.concat(D.AVISOS).filter((a) => !fora.has(a.id));
     if (u.perfil === 'coordenador' || u.perfil === 'gestor') return todos;
     if (u.perfil === 'aluno') { const t = EC.aluno(u.id).turma; return todos.filter((a) => ['todos', 'alunos', t].includes(a.publico)); }
     const minhas = new Set(D.PROFESSORES.find((p) => p.id === u.id).disc.map(([t]) => t));
@@ -359,7 +377,7 @@ window.EC = window.EC || {};
   EC.publicoNome = (p) => ({ todos: 'Toda a escola', professores: 'Professores', alunos: 'Alunos' }[p] || (EC.turma(p) ? EC.turma(p).nome : p));
   EC.avisoData = (a) => (a.data ? new Date(a.data) : EC.dateAdd(EC.today(), a.dias));
   EC.publicarAviso = (u, onDone) => {
-    const turmas = u.perfil === 'professor' ? [...new Set(D.PROFESSORES.find((p) => p.id === u.id).disc.map(([t]) => t))] : D.TURMAS.map((t) => t.id);
+    const turmas = EC.turmas().map((t) => t.id);
     const opts = (u.perfil === 'professor' ? [] : [['todos', 'Toda a escola'], ['professores', 'Professores'], ['alunos', 'Alunos']]).concat(turmas.map((t) => [t, 'Turma ' + EC.turma(t).nome]));
     EC.modal(`${EC.modalHead('Publicar aviso', 'O aviso aparece no mural do público escolhido, com autor e data.')}
       <form class="modal-body stack" id="av-form" novalidate>
@@ -395,11 +413,23 @@ window.EC = window.EC || {};
           <div class="stack" style="max-width:860px">
             ${avisos.map((a, i) => `<article class="card post" style="animation-delay:${i * 40}ms">
               ${EC.avatar({ nome: a.autor, foto: a.autor === 'Ricardo Almeida' ? D.USUARIOS_DEMO.professor.foto : null }, 44)}
-              <div><h4>${esc(a.titulo)}</h4><div class="meta"><span>${esc(a.autor)} · ${esc(a.perfil)}</span><span>·</span><span>${EC.fmtDate(EC.avisoData(a))}</span>${EC.chip(EC.publicoNome(a.publico), 'info')}</div></div>
+              <div><div class="row" style="align-items:flex-start"><h4 style="flex:1">${esc(a.titulo)}</h4>${a.autor === u.nome ? `<button class="btn btn-ghost btn-sm" data-del="${a.id}" title="Excluir aviso" aria-label="Excluir aviso ${esc(a.titulo)}">${I('trash', 'sm')}</button>` : ''}</div><div class="meta"><span>${esc(a.autor)} · ${esc(a.perfil)}</span><span>·</span><span>${EC.fmtDate(EC.avisoData(a))}</span>${EC.chip(EC.publicoNome(a.publico), 'info')}</div></div>
               <p>${esc(a.texto)}</p>
             </article>`).join('') || EC.empty('Nenhum aviso por enquanto.', 'megaphone')}
           </div>`,
-        after(root) { root.querySelector('#novo-aviso')?.addEventListener('click', () => EC.publicarAviso(u, render)); },
+        after(root) {
+          root.querySelector('#novo-aviso')?.addEventListener('click', () => EC.publicarAviso(u, render));
+          // Autor pode excluir o próprio aviso
+          root.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
+            const av = avisos.find((x) => x.id === b.dataset.del);
+            if (!(await EC.confirm({ title: 'Excluir aviso?', text: `"${av.titulo}" sai do mural de todos os usuários.`, ok: 'Excluir', tone: 'danger' }))) return;
+            EC.state.avisosRemovidos = (EC.state.avisosRemovidos || []).concat(av.id);
+            EC.save();
+            EC.log('Excluiu aviso do mural: ' + av.titulo);
+            EC.toast('Aviso excluído do mural');
+            render();
+          }));
+        },
       };
     },
   });

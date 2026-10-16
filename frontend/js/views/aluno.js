@@ -15,7 +15,7 @@
     const a = EC.aluno(u.id), t = EC.turma(a.turma);
     const media = EC.mediaGeral(a.id), sit = EC.situacao(media);
     const prox = proximaAvaliacao(a);
-    const melhor = t.disciplinas.slice().sort((x, y) => EC.mediaDisc(a.id, y) - EC.mediaDisc(a.id, x));
+    const melhor = t.disciplinas.slice().sort((x, y) => (EC.mediaDisc(a.id, y) ?? -1) - (EC.mediaDisc(a.id, x) ?? -1));
     return {
       title: 'Início',
       html: `
@@ -67,14 +67,14 @@
               <thead><tr><th>Disciplina</th>${B.map((b) => `<th>${b}</th>`).join('')}<th>Média</th><th>Faltas</th><th style="font-size:16px">Situação</th></tr></thead>
               <tbody>${t.disciplinas.map((d) => {
                 const n = EC.notas(a.id, d), m = EC.mediaDisc(a.id, d);
-                return `<tr><td>${esc(EC.disc(d).nome)}</td>${n.map((x) => `<td class="num ${x < 4 ? 'low' : x < 6 ? 'mid' : ''}">${EC.fmtNota(x)}</td>`).join('')}<td class="num" style="font-weight:700">${EC.fmtNota(m)}</td><td class="num">${EC.faltas(a.id, d)}</td><td style="font-family:var(--font)">${EC.sitChip(EC.situacao(m))}</td></tr>`;
+                return `<tr><td>${esc(EC.disc(d).nome)}</td>${n.map((x) => `<td class="num ${EC.notaCls(x)}">${EC.fmtNota(x)}</td>`).join('')}<td class="num" style="font-weight:700">${EC.fmtNota(m)}</td><td class="num">${EC.faltas(a.id, d)}</td><td style="font-family:var(--font)">${EC.sitChip(EC.situacao(m))}</td></tr>`;
               }).join('')}</tbody>
             </table>
           </div>
           <div class="m-cards">${t.disciplinas.map((d) => {
             const n = EC.notas(a.id, d), m = EC.mediaDisc(a.id, d);
             return `<article class="card m-card"><header><b>${esc(EC.disc(d).nome)}</b>${EC.sitChip(EC.situacao(m))}</header>
-              <div class="m-bims">${n.map((x, i) => `<span><small>${i + 1}º bim</small><b class="${x < 4 ? 'low' : ''}">${EC.fmtNota(x)}</b></span>`).join('')}</div>
+              <div class="m-bims">${n.map((x, i) => `<span><small>${i + 1}º bim</small><b class="${EC.notaCls(x) === 'low' ? 'low' : ''}">${EC.fmtNota(x)}</b></span>`).join('')}</div>
               <footer><span>Média <b>${EC.fmtNota(m)}</b></span><span>Faltas <b>${EC.faltas(a.id, d)}</b></span></footer></article>`;
           }).join('')}</div>
           <p class="muted" style="font-size:13px;margin-top:16px">Média ≥ 6,0: aprovado · 4,0 a 5,9: recuperação · abaixo de 4,0: reprovado.</p>`,

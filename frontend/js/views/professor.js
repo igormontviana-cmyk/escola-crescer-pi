@@ -4,8 +4,10 @@
 (function () {
   const D = EC.data, I = EC.icon, esc = EC.esc, S = EC.state;
 
-  const turmasDoProf = (u) => (u.perfil === 'professor' ? [...new Set(D.PROFESSORES.find((p) => p.id === u.id).disc.map(([t]) => t))] : D.TURMAS.map((t) => t.id));
-  const podeEditar = (u, t, d) => u.perfil === 'professor' && EC.lecionaProf(u.id, t, d);
+  // Demonstração: professor e coordenação acessam e editam todas as turmas e disciplinas
+  const turmasDoProf = () => EC.turmas().map((t) => t.id);
+  const turmaPadrao = (ts) => (ts.includes('3ema') ? '3ema' : ts[0]); // turma do protótipo Figma
+  const podeEditar = (u) => u.perfil === 'professor' || u.perfil === 'coordenador';
 
   /* ---------------- Calendário + Próximos eventos (Figma) ---------------- */
   EC.calendarHtml = () => `<div><div class="cal" id="cal"></div><section class="events" id="events" aria-live="polite"></section></div>`;
@@ -13,8 +15,15 @@
     const today = EC.today();
     const base = new Date(today.getFullYear(), today.getMonth(), 1);
     const equipe = u.perfil !== 'aluno';
-    const evs = D.EVENTOS.filter((e) => equipe || e.publico === 'todos').map((e) => ({ ...e, date: new Date(base.getFullYear(), base.getMonth() + e.m, e.d) })).sort((a, b) => a.date - b.date);
-    const dias = [...new Set(evs.map((e) => EC.iso(e.date)))];
+    // Eventos fixos (relativos ao mês atual) + eventos criados na demonstração (data absoluta)
+    let evs, dias;
+    const carregar = () => {
+      evs = D.EVENTOS.map((e) => ({ ...e, date: new Date(base.getFullYear(), base.getMonth() + e.m, e.d) }))
+        .concat(S.eventos.map((e) => ({ ...e, date: EC.fromIso(e.data) })))
+        .filter((e) => equipe || e.publico === 'todos').sort((a, b) => a.date - b.date);
+      dias = [...new Set(evs.map((e) => EC.iso(e.date)))];
+    };
+    carregar();
     let view = new Date(base);
     let sel = dias.find((d) => EC.fromIso(d) >= today) || dias[dias.length - 1];
     const COR = { navy: 'var(--ev-navy)', green: 'var(--ev-green)', red: 'var(--ev-red)', yellow: 'var(--ev-yellow)' };
@@ -38,12 +47,13 @@
       const de = evs.filter((e) => EC.iso(e.date) === sel);
       const sd = sel ? EC.fromIso(sel) : today;
       root.querySelector('#events').innerHTML = `
-        <h2>Próximos Eventos</h2>
+        <div class="row" style="justify-content:space-between;align-items:flex-end"><h2>Próximos Eventos</h2>${equipe ? `<button class="btn btn-soft btn-sm" data-novo-evento style="margin-bottom:10px">${I('plus', 'sm')} Evento</button>` : ''}</div>
         <div class="events-nav"><b>${sd.getDate()} ${EC.cap(EC.MESES[sd.getMonth()].slice(0, 3))}</b><span class="ln"></span>
           <button class="arrow-btn" data-ev="-1" aria-label="Data anterior com eventos">${I('left', 'sm')}</button><button class="arrow-btn" data-ev="1" aria-label="Próxima data com eventos">${I('right', 'sm')}</button></div>
         ${de.length ? de.map((e, i) => `<div class="event" style="border-color:${COR[e.cor]};color:${e.cor === 'navy' ? 'var(--ink)' : e.cor === 'yellow' ? '#e0b000' : COR[e.cor]};animation-delay:${i * 50}ms"><h4>${esc(e.titulo)}</h4><p>${esc(e.texto)}</p></div>`).join('') : '<p class="events-empty">Nenhum evento nesta data.</p>'}`;
     }
     root.addEventListener('click', (e) => {
+      if (e.target.closest('[data-novo-evento]')) { novoEvento(); return; }
       const mv = e.target.closest('[data-mv]'), d = e.target.closest('[data-d]'), ev = e.target.closest('[data-ev]');
       if (mv) { view = new Date(view.getFullYear(), view.getMonth() + +mv.dataset.mv, 1); draw(); }
       if (d) { sel = d.dataset.d; draw(); }
@@ -52,6 +62,38 @@
         if (i >= 0 && i < dias.length) { sel = dias[i]; const x = EC.fromIso(sel); view = new Date(x.getFullYear(), x.getMonth(), 1); draw(); }
       }
     });
+    // Criar evento no calendário (equipe escolar)
+    function novoEvento() {
+      const CORES = [['navy', 'Reunião'], ['green', 'Atividade ou palestra'], ['red', 'Prazo'], ['yellow', 'Evento cultural']];
+      EC.modal(`${EC.modalHead('Novo evento', 'Aparece no calendário e em Próximos Eventos.')}
+        <form class="modal-body form-grid" novalidate>
+          <div class="field full"><label for="ev-t">Título</label><input class="input" id="ev-t" maxlength="70" placeholder="Ex.: Conselho de Classe do 3º bimestre"><span class="msg">Informe o título.</span></div>
+          <div class="field"><label for="ev-d">Data</label><input class="input" id="ev-d" type="date" value="${sel || EC.iso(today)}"><span class="msg">Informe a data.</span></div>
+          <div class="field"><label for="ev-c">Tipo</label><select id="ev-c">${CORES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></div>
+          <div class="field full"><label for="ev-x">Descrição</label><textarea id="ev-x" maxlength="200" style="min-height:84px" placeholder="Opcional"></textarea></div>
+          <div class="field full"><label for="ev-p">Quem vê</label><select id="ev-p"><option value="todos">Toda a escola (inclui alunos)</option><option value="equipe">Só a equipe escolar</option></select></div>
+        </form>
+        <div class="modal-foot"><button class="btn btn-ghost" data-close>Cancelar</button><button class="btn btn-primary" id="ev-ok">Criar evento</button></div>`, {
+        onMount(ov, close) {
+          ov.querySelector('#ev-ok').addEventListener('click', () => {
+            const t = ov.querySelector('#ev-t'), d = ov.querySelector('#ev-d');
+            t.parentElement.classList.toggle('err', !t.value.trim());
+            d.parentElement.classList.toggle('err', !d.value);
+            if (!t.value.trim() || !d.value) return;
+            S.eventos.push({ id: 'e' + Date.now(), titulo: t.value.trim(), texto: ov.querySelector('#ev-x').value.trim(), cor: ov.querySelector('#ev-c').value, publico: ov.querySelector('#ev-p').value, data: d.value, autor: u.nome });
+            EC.save();
+            EC.log('Criou evento no calendário: ' + t.value.trim());
+            close();
+            carregar();
+            sel = d.value;
+            const x = EC.fromIso(sel);
+            view = new Date(x.getFullYear(), x.getMonth(), 1);
+            draw();
+            EC.toast('Evento criado no calendário');
+          });
+        },
+      });
+    }
     draw();
   };
 
@@ -110,10 +152,11 @@
     render(p, u) {
       const ts = turmasDoProf(u);
       const q = new URLSearchParams(location.hash.split('?')[1] || '');
-      const turma = q.get('t') && ts.includes(q.get('t')) ? q.get('t') : ts[0];
+      const turma = q.get('t') && ts.includes(q.get('t')) ? q.get('t') : turmaPadrao(ts);
       return {
         html: `
-          <div class="page-head flat"><h1>Lista de Alunos</h1></div>
+          <div class="page-head flat"><h1>Lista de Alunos</h1>
+            <div class="row wrap"><button class="btn btn-ghost" id="nova-turma">${I('layers', 'sm')} Nova turma</button><button class="btn btn-primary" id="novo-aluno">${I('userPlus', 'sm')} Cadastrar aluno</button></div></div>
           <div class="filterbar">
             ${EC.selectHtml('Série', ts.map((t) => [t, EC.turma(t).nome]), turma)}
             ${EC.selectHtml('Turno', [['', 'Turno'], ['Matutino', 'Matutino'], ['Vespertino', 'Vespertino']], '')}
@@ -122,6 +165,8 @@
           <div class="students" id="students"></div>`,
         after(root) {
           const selT = root.querySelector('#Série'), selTurno = root.querySelector('#Turno'), fq = root.querySelector('#fq');
+          root.querySelector('#nova-turma').addEventListener('click', () => EC.novaTurmaModal(u, (id) => { location.hash = '/alunos?t=' + id; }));
+          root.querySelector('#novo-aluno').addEventListener('click', () => EC.novoAlunoModal(u, selT.value, (al) => { location.hash = '/alunos?t=' + al.turma; EC.render(); }));
           function draw() {
             const turno = selTurno.value;
             // Turno filtra as séries disponíveis
@@ -167,9 +212,6 @@
       const a = EC.aluno(p.id);
       if (!a) return { html: EC.empty('Aluno não encontrado.') };
       const t = EC.turma(a.turma);
-      if (u.perfil === 'professor' && !turmasDoProf(u).includes(a.turma)) {
-        return { html: `<div class="denied"><div class="big">${I('lock')}</div><h2>Acesso restrito</h2><p>Você só visualiza alunos das turmas em que leciona (RN-007).</p><a class="btn btn-primary" href="#/alunos">Voltar</a></div>` };
-      }
       const media = EC.mediaGeral(a.id);
       const occ = S.ocorrencias[a.id] || [];
       return {
@@ -226,7 +268,7 @@
             const ds = t.disciplinas.filter((d) => EC.disc(d).nome.toLowerCase().includes(v));
             root.querySelector('#subj-rows').innerHTML = ds.map((d, i) => {
               const m = EC.mediaDisc(a.id, d);
-              return `<div class="subj-row" style="animation-delay:${i * 35}ms"><div title="${esc(EC.disc(d).nome)}">${esc(EC.disc(d).nome)}</div><div>${EC.faltas(a.id, d)}</div><div class="${m < 5 ? 'low' : ''}">${EC.fmtNota(m)}</div></div>`;
+              return `<div class="subj-row" style="animation-delay:${i * 35}ms"><div title="${esc(EC.disc(d).nome)}">${esc(EC.disc(d).nome)}</div><div>${EC.faltas(a.id, d)}</div><div class="${m != null && m < 5 ? 'low' : ''}">${EC.fmtNota(m)}</div></div>`;
             }).join('') || `<p class="muted" style="padding:24px;text-align:center">Nenhuma matéria encontrada.</p>`;
           }
           sq.addEventListener('input', draw);
@@ -281,7 +323,9 @@
     title: 'Notas', roles: ['professor', 'coordenador'],
     render(p, u) {
       const ts = turmasDoProf(u);
-      let idx = Math.max(0, ts.indexOf(sessionStorage.getItem('ec-notas-t') || ts[0]));
+      let salvo = null;
+      try { salvo = sessionStorage.getItem('ec-notas-t'); } catch (e) {}
+      let idx = Math.max(0, ts.indexOf(salvo && ts.includes(salvo) ? salvo : turmaPadrao(ts)));
       return {
         html: `<h1 class="sr-only">Notas</h1><div class="class-switch">
             <button class="tri" data-dir="-1" aria-label="Turma anterior"><svg viewBox="0 0 40 60"><path d="M36 4 6 30l30 26c2 2 4 1 4-2V6c0-3-2-4-4-2z"/></svg></button>
@@ -289,7 +333,7 @@
             <button class="tri" data-dir="1" aria-label="Próxima turma"><svg viewBox="0 0 40 60"><path d="M4 4l30 26L4 56c-2 2-4 1-4-2V6c0-3 2-4 4-2z"/></svg></button>
           </div>
           <div class="subjects" id="subjects"></div>
-          <div class="legend-line">${u.perfil === 'professor' ? `<span>${I('edit', 'sm')} Disciplinas que você leciona: edição liberada</span><span>${I('lock', 'sm')} Outras disciplinas: somente leitura</span>` : `<span>${I('lock', 'sm')} Coordenação: visualização das notas de todas as turmas</span>`}</div>`,
+          <div class="legend-line"><span>${I('layers', 'sm')} Use as setas para trocar de turma (${ts.length} turmas)</span><span>${I('edit', 'sm')} Clique na matéria para ver e editar as notas</span></div>`,
         after(root) {
           function draw() {
             const t = EC.turma(ts[idx]);
@@ -336,7 +380,7 @@
               <thead><tr><th scope="col">Alunos</th>${B.map((b) => `<th scope="col">${b}</th>`).join('')}<th scope="col">Média</th><th scope="col" style="font-size:16px">Situação</th></tr></thead>
               <tbody>${alunos.map((a) => {
                 const n = EC.notas(a.id, p.d), m = EC.mediaDisc(a.id, p.d);
-                return `<tr><td>${esc(a.nome)}</td>${n.map((x, i) => editing ? `<td><input inputmode="decimal" data-a="${a.id}" data-i="${i}" value="${EC.fmtNota(x)}" aria-label="${esc(a.nome)}, ${B[i]}"></td>` : `<td class="num ${x < 4 ? 'low' : x < 6 ? 'mid' : ''}">${EC.fmtNota(x)}</td>`).join('')}
+                return `<tr><td>${esc(a.nome)}</td>${n.map((x, i) => editing ? `<td><input inputmode="decimal" data-a="${a.id}" data-i="${i}" value="${x == null ? '' : EC.fmtNota(x)}" placeholder="–" aria-label="${esc(a.nome)}, ${B[i]}"></td>` : `<td class="num ${EC.notaCls(x)}">${EC.fmtNota(x)}</td>`).join('')}
                   <td class="num" style="font-weight:700">${EC.fmtNota(m)}</td><td style="font-family:var(--font)">${EC.sitChip(EC.situacao(m))}</td></tr>`;
               }).join('')}</tbody></table>`;
             wire();
@@ -348,20 +392,19 @@
               EC.downloadCsv(`notas-${t.nome}-${d.nome}.csv`.replace(/\s+/g, '_'), [['Aluno', ...B, 'Média', 'Situação']].concat(alunos.map((a) => { const m = EC.mediaDisc(a.id, p.d); return [a.nome, ...EC.notas(a.id, p.d).map(EC.fmtNota), EC.fmtNota(m), EC.situacao(m)]; })));
               EC.toast('Arquivo CSV gerado', 'info');
             });
-            root.querySelectorAll('#grades input').forEach((inp) => inp.addEventListener('input', () => {
-              const v = parseFloat(inp.value.replace(',', '.'));
-              inp.classList.toggle('invalid', isNaN(v) || v < 0 || v > 10);
-            }));
+            // Campo vazio = sem nota (aluno recém-matriculado); preenchido = 0 a 10
+            const invalida = (i) => { if (!i.value.trim()) return false; const v = parseFloat(i.value.replace(',', '.')); return isNaN(v) || v < 0 || v > 10; };
+            root.querySelectorAll('#grades input').forEach((inp) => inp.addEventListener('input', () => inp.classList.toggle('invalid', invalida(inp))));
             root.querySelector('#save')?.addEventListener('click', async () => {
               const inputs = [...root.querySelectorAll('#grades input')];
-              const bad = inputs.filter((i) => { const v = parseFloat(i.value.replace(',', '.')); return isNaN(v) || v < 0 || v > 10; });
+              const bad = inputs.filter(invalida);
               inputs.forEach((i) => i.classList.toggle('invalid', bad.includes(i)));
               // Validação antes de gravar (aprendizado da PoC 2)
               if (bad.length) { EC.toast(`Corrija ${bad.length} nota(s): use valores de 0 a 10.`, 'err'); bad[0].focus(); return; }
               if (!(await EC.confirm({ title: 'Confirmar lançamento?', text: `As notas de ${d.nome} da turma ${t.nome} serão atualizadas no boletim dos alunos.`, ok: 'Salvar notas' }))) return;
               alunos.forEach((a) => {
                 const arr = EC.notas(a.id, p.d);
-                inputs.filter((i) => i.dataset.a === a.id).forEach((i) => { arr[+i.dataset.i] = D.r1(parseFloat(i.value.replace(',', '.'))); });
+                inputs.filter((i) => i.dataset.a === a.id).forEach((i) => { arr[+i.dataset.i] = i.value.trim() ? D.r1(parseFloat(i.value.replace(',', '.'))) : null; });
                 EC.setNotas(a.id, p.d, arr);
               });
               EC.log(`Editou notas: ${d.nome}, ${t.nome}`);
@@ -409,6 +452,13 @@
       return {
         html: `
           <div class="page-head"><h1>Chamada</h1></div>
+          <section class="card quick-att no-print" aria-label="Chamada de qualquer turma">
+            <div><b>Chamada de qualquer turma</b><span class="muted">Escolha a turma, a disciplina e a data</span></div>
+            ${EC.selectHtml('Turma da chamada', EC.turmas().map((t) => [t.id, t.nome]), turmaPadrao(turmasDoProf()), 'light')}
+            <span id="qa-disc"></span>
+            <label class="sr-only" for="qa-data">Data</label><input class="input" id="qa-data" type="date" value="${EC.iso(today)}" max="${EC.iso(today)}">
+            <button class="btn btn-primary" id="qa-ir">${I('clipboard', 'sm')} Abrir lista</button>
+          </section>
           <h2 style="font-size:24px;font-weight:700;margin:0 0 24px 8px">Suas matérias</h2>
           <div class="month-bar">
             <button data-m="${mk(-1)}">${I('left', 'sm')} Mês anterior</button>
@@ -433,6 +483,16 @@
           }).join('') || EC.empty('Nenhuma aula neste mês.', 'calendar')}`,
         after(root) {
           root.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => { location.hash = '/chamada?m=' + b.dataset.m; }));
+          const selT = root.querySelector('#Turma-da-chamada');
+          const discs = () => { root.querySelector('#qa-disc').innerHTML = EC.selectHtml('Disciplina da chamada', EC.turma(selT.value).disciplinas.map((d) => [d, EC.disc(d).nome]), '', 'light'); };
+          selT.addEventListener('change', discs);
+          discs();
+          root.querySelector('#qa-ir').addEventListener('click', () => {
+            const dt = root.querySelector('#qa-data').value;
+            if (!dt) { EC.toast('Escolha a data da chamada.', 'err'); return; }
+            if (dt > EC.iso(today)) { EC.toast('Não é possível gerar chamada para uma data futura.', 'err'); return; }
+            location.hash = `/chamada/${selT.value}/${root.querySelector('#Disciplina-da-chamada').value}/${dt}`;
+          });
           const h = root.querySelector('#hoje');
           if (h) requestAnimationFrame(() => window.scrollTo(0, h.getBoundingClientRect().top + scrollY - 96));
         },
@@ -445,7 +505,7 @@
     title: 'Chamada', roles: ['professor'], nav: '/chamada',
     render(p, u) {
       const t = EC.turma(p.t), d = EC.disc(p.d);
-      if (!t || !d || !EC.lecionaProf(u.id, p.t, p.d)) return { html: `<div class="denied"><div class="big">${I('lock')}</div><h2>Acesso restrito</h2><p>Você só registra chamada das disciplinas que leciona (RN-007).</p><a class="btn btn-primary" href="#/chamada">Voltar</a></div>` };
+      if (!t || !d) return { html: EC.empty('Turma ou disciplina não encontrada.') };
       const dt = EC.fromIso(p.date);
       const alunos = EC.alunosDaTurma(p.t);
       const pres = EC.presentes(p.t, p.d, p.date);
@@ -539,6 +599,7 @@
     if (av.custom) return null;
     if (av.bim === 4 && av.tipo === 'Prova') return null; // ainda não aplicada
     const b = EC.notas(a.id, d)[av.bim - 1];
+    if (b == null) return null; // aluno sem nota no bimestre (recém-matriculado)
     return b === 0 ? 0 : D.r1(D.clamp(b + TIPOS[av.tipo]));
   };
   EC.statusAv = (t, d, av) => {
@@ -551,10 +612,11 @@
   EC.route('/avaliacoes', {
     title: 'Avaliações', roles: ['professor'],
     render(p, u) {
-      const pares = D.PROFESSORES.find((x) => x.id === u.id).disc;
       const q = new URLSearchParams(location.hash.split('?')[1] || '');
-      const sel = q.get('k') || pares[0].join('|');
-      const [t, d] = sel.split('|');
+      let [t, d] = (q.get('k') || '3ema|mat').split('|');
+      if (!EC.turma(t)) t = turmaPadrao(turmasDoProf());
+      if (!EC.turma(t).disciplinas.includes(d)) d = EC.turma(t).disciplinas[0];
+      const sel = t + '|' + d;
       const bim = +(q.get('b') || EC.bimestreAtual());
       const avs = EC.avaliacoes(t, d).filter((a) => a.bim === bim);
       const alunos = EC.alunosDaTurma(t);
@@ -566,7 +628,8 @@
           <div class="page-head"><div><h1>Avaliações</h1><p>Cada avaliação pertence a uma disciplina e tem peso definido (RN-005).</p></div>
             <button class="btn btn-primary" id="nova">${I('plus', 'sm')} Nova avaliação</button></div>
           <div class="filters">
-            ${EC.selectHtml('Turma e disciplina', pares.map(([tt, dd]) => [tt + '|' + dd, `${EC.disc(dd).nome} · ${EC.turma(tt).nome}`]), sel, 'light')}
+            ${EC.selectHtml('Turma', EC.turmas().map((x) => [x.id, x.nome]), t, 'light')}
+            ${EC.selectHtml('Disciplina', EC.turma(t).disciplinas.map((x) => [x, EC.disc(x).nome]), d, 'light')}
             <div class="tabs" role="tablist">${[1, 2, 3, 4].map((b) => `<button role="tab" data-b="${b}" class="${b === bim ? 'on' : ''}" aria-selected="${b === bim}">${b}º Bimestre</button>`).join('')}</div>
           </div>
           ${publicada ? `<div class="alert-banner info">${I('check')}<div><b>Notas do ${bim}º bimestre publicadas no boletim</b>A média ponderada das avaliações já está disponível para os alunos.</div></div>`
@@ -589,7 +652,8 @@
           </div>`,
         after(root) {
           const nav = (k, b) => { location.hash = `/avaliacoes?k=${encodeURIComponent(k)}&b=${b}`; };
-          root.querySelector('select').addEventListener('change', (e) => nav(e.target.value, bim));
+          root.querySelector('#Turma').addEventListener('change', (e) => nav(e.target.value + '|' + EC.turma(e.target.value).disciplinas[0], bim));
+          root.querySelector('#Disciplina').addEventListener('change', (e) => nav(t + '|' + e.target.value, bim));
           root.querySelectorAll('[data-b]').forEach((b) => b.addEventListener('click', () => nav(sel, b.dataset.b)));
           root.querySelector('#publicar')?.addEventListener('click', async () => {
             if (!(await EC.confirm({ title: 'Publicar no boletim?', text: `A média ponderada das ${avs.length} avaliações substituirá a nota do ${bim}º bimestre de ${EC.disc(d).nome} (${EC.turma(t).nome}).`, ok: 'Publicar' }))) return;
@@ -646,7 +710,7 @@
       const q = new URLSearchParams(location.hash.split('?')[1] || '');
       const [t, d] = (q.get('k') || '').split('|');
       const av = t && d ? EC.avaliacoes(t, d).find((x) => x.id === p.id) : null;
-      if (!av || !EC.lecionaProf(u.id, t, d)) return { html: EC.empty('Avaliação não encontrada.') };
+      if (!av) return { html: EC.empty('Avaliação não encontrada.') };
       const st = EC.statusAv(t, d, av);
       const ro = st === 'Publicada';
       const alunos = EC.alunosDaTurma(t);

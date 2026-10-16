@@ -34,50 +34,70 @@ window.EC = window.EC || {};
   const EM = ['mat', 'fis', 'qui', 'geo', 'soc', 'bio', 'por', 'his']; // ordem da tela "Matérias" do Figma
   const EF = ['lpf', 'mtf', 'cie', 'his', 'geo', 'ing'];
 
+  // 8 turmas do 6º ano ao Ensino Médio. Ordem = ordem de exibição.
   const TURMAS = [
-    { id: '3ema', nome: '3ºEM - A', curto: '3° ano A', serie: '3º Ano EM', turno: 'Matutino', sala: 'Sala 12', disciplinas: EM.slice() },
-    { id: '2emd', nome: '2ºEM - D', curto: '2° ano D', serie: '2º Ano EM', turno: 'Matutino', sala: 'Sala 08', disciplinas: EM.slice() },
-    { id: '1emb', nome: '1ºEM - B', curto: '1° ano B', serie: '1º Ano EM', turno: 'Vespertino', sala: 'Sala 05', disciplinas: EM.slice() },
+    { id: '6efb', nome: '6º Ano - B', curto: '6° ano B', serie: '6º Ano EF', turno: 'Matutino', sala: 'Sala 01', disciplinas: EF.slice() },
     { id: '7efa', nome: '7º Ano - A', curto: '7° ano A', serie: '7º Ano EF', turno: 'Vespertino', sala: 'Sala 03', disciplinas: EF.slice() },
+    { id: '8efa', nome: '8º Ano - A', curto: '8° ano A', serie: '8º Ano EF', turno: 'Matutino', sala: 'Sala 04', disciplinas: EF.slice() },
+    { id: '9efc', nome: '9º Ano - C', curto: '9° ano C', serie: '9º Ano EF', turno: 'Vespertino', sala: 'Sala 06', disciplinas: EF.slice() },
+    { id: '1emb', nome: '1ºEM - B', curto: '1° ano B', serie: '1º Ano EM', turno: 'Vespertino', sala: 'Sala 05', disciplinas: EM.slice() },
+    { id: '2emd', nome: '2ºEM - D', curto: '2° ano D', serie: '2º Ano EM', turno: 'Matutino', sala: 'Sala 08', disciplinas: EM.slice() },
+    { id: '3ema', nome: '3ºEM - A', curto: '3° ano A', serie: '3º Ano EM', turno: 'Matutino', sala: 'Sala 12', disciplinas: EM.slice() },
+    { id: '3emb', nome: '3ºEM - B', curto: '3° ano B', serie: '3º Ano EM', turno: 'Vespertino', sala: 'Sala 14', disciplinas: EM.slice() },
   ];
 
   const PROFESSORES = [
-    { id: 'p1', nome: 'Ricardo Almeida', email: 'ricardo.almeida@gentemiudacrescer.com', cpf: '12345678909', disc: [['3ema', 'mat'], ['3ema', 'fis'], ['2emd', 'por'], ['7efa', 'cie']] },
-    { id: 'p2', nome: 'Helena Prado', email: 'helena.prado@gentemiudacrescer.com', cpf: '31415926535', disc: [['3ema', 'bio'], ['3ema', 'qui'], ['2emd', 'bio'], ['2emd', 'qui'], ['1emb', 'bio'], ['1emb', 'qui']] },
-    { id: 'p3', nome: 'Carlos Menezes', email: 'carlos.menezes@gentemiudacrescer.com', cpf: '27182818284', disc: [['3ema', 'his'], ['3ema', 'geo'], ['3ema', 'soc'], ['2emd', 'his'], ['2emd', 'geo'], ['2emd', 'soc'], ['1emb', 'his'], ['7efa', 'his'], ['7efa', 'geo']] },
-    { id: 'p4', nome: 'Juliana Castro', email: 'juliana.castro@gentemiudacrescer.com', cpf: '16180339887', disc: [['3ema', 'por'], ['1emb', 'por'], ['7efa', 'lpf'], ['7efa', 'ing'], ['2emd', 'mat'], ['1emb', 'mat'], ['7efa', 'mtf'], ['2emd', 'fis'], ['1emb', 'fis'], ['1emb', 'geo'], ['1emb', 'soc']] },
+    { id: 'p1', nome: 'Ricardo Almeida', email: 'ricardo.almeida@gentemiudacrescer.com', cpf: '12345678909', disc: [] },
+    { id: 'p2', nome: 'Helena Prado', email: 'helena.prado@gentemiudacrescer.com', cpf: '31415926535', disc: [] },
+    { id: 'p3', nome: 'Carlos Menezes', email: 'carlos.menezes@gentemiudacrescer.com', cpf: '27182818284', disc: [] },
+    { id: 'p4', nome: 'Juliana Castro', email: 'juliana.castro@gentemiudacrescer.com', cpf: '16180339887', disc: [] },
+    { id: 'p5', nome: 'Fernanda Oliveira', email: 'fernanda.oliveira@gentemiudacrescer.com', cpf: '21436587091', disc: [] },
+    { id: 'p6', nome: 'Rodrigo Santos', email: 'rodrigo.santos@gentemiudacrescer.com', cpf: '35792468013', disc: [] },
+    { id: 'p7', nome: 'Patrícia Lima', email: 'patricia.lima@gentemiudacrescer.com', cpf: '86420975318', disc: [] },
   ];
+  // Professor responsável por disciplina e turma (Professor_Disciplina). As aulas do Figma ficam com o Ricardo.
+  const ehEF = (t) => TURMAS.find((x) => x.id === t).serie.includes('EF');
+  const RESP = (t, d) => ({
+    mat: t === '3ema' ? 'p1' : 'p6', fis: t === '3ema' || t === '3emb' ? 'p1' : 'p6', qui: 'p2', bio: 'p2',
+    his: ehEF(t) ? 'p7' : 'p3', geo: ehEF(t) ? 'p7' : 'p3', soc: 'p3',
+    por: t === '2emd' ? 'p1' : 'p4', lpf: 'p5', ing: 'p5', mtf: 'p6', cie: t === '7efa' ? 'p1' : 'p2',
+  })[d];
+  TURMAS.forEach((t) => t.disciplinas.forEach((d) => PROFESSORES.find((p) => p.id === RESP(t.id, d)).disc.push([t.id, d])));
 
   // Sprite: recorte das fotos do Figma (Lista de Alunos, 1265x1600)
   const SP = (y) => ({ src: 'assets/img/alunos-sprite.png', w: 1265, h: 1600, cx: 388, cy: y, d: 66 });
 
-  // Alunos do 3ºEM - A exatamente como no protótipo
+  // Alunos do 3ºEM - A como no protótipo (4 nomes trocados por nomes brasileiros, com autorização)
   const FIGMA_3EMA = [
     ['Anna Miyamoto', 100, [9.0, 8.0, 9.0, 8.0], SP(321)],
     ['Alice Fernandes', 100, [9.8, 9.9, 10.0, 10.0], SP(415)],
     ['Bruno Oliveira', 93, [8.8, 9.3, 9.1, 9.5], SP(509)],
-    ['Elizabeth Webber', 80, [7.8, 8.5, 8.0, 8.2], SP(603)],
+    ['Elisa Barbosa', 80, [7.8, 8.5, 8.0, 8.2], SP(603)],
     ['Felipe Lima', 76, [7.2, 6.9, 7.5, 7.1], null],
     ['Henrique Silva', 75, [7.0, 7.3, 7.8, 8.0], SP(791)],
-    ['Sebastian da Cunha', 65, [6.5, 6.8, 6.7, 8.0], SP(885)],
+    ['Samuel da Cunha', 65, [6.5, 6.8, 6.7, 8.0], SP(885)],
     ['Gabriela Carvalho', 46, [4.8, 4.3, 4.2, 4.5], SP(980)],
     ['João Pereira', 44, [5.0, 4.5, 4.6, 4.3], null],
     ['João Manoel Carvalho', 30, [3.0, 3.2, 2.8, 3.1], SP(1170)],
     ['Camila Souza', 28, [2.8, 2.5, 2.6, 2.9], null],
     ['Diego Martins da Silva', 20, [2.3, 2.1, 2.0, 2.2], null],
-    ['Cesar Oliveira Cohen', 0, [0, 0, 0, 0], null],
+    ['César Oliveira Costa', 0, [0, 0, 0, 0], null],
   ];
   // Foto em alta da Anna (tela Detalhes e info Alunos, 1440x1024)
   const ANNA_HI = { src: 'assets/img/detalhe-sprite.png', w: 1440, h: 1024, x: 94, y: 187, s: 350 }; // recorte acima do marcador sobreposto no Figma
   // Notas da Anna na tela de detalhes do Figma
   const ANNA_DISC = { mat: 8.5, fis: 7.8, qui: 9.2, bio: 7.0, his: 8.0, geo: 6.5, soc: 7.3, por: 8.9 };
 
-  const OUTROS = {
-    '2emd': [['Lucas Andrade', 96], ['Mariana Costa', 91], ['Pedro Henrique Rocha', 88], ['Beatriz Lima', 84], ['Rafael Moura', 79], ['Isabela Teixeira', 93], ['Gustavo Nunes', 71], ['Larissa Campos', 86], ['Thiago Fritz', 68], ['Arthur Cervero', 90]],
-    '1emb': [['Sofia Martins', 95], ['Enzo Barbosa', 82], ['Valentina Ramos', 89], ['Matheus Freitas', 77], ['Manuela Dias', 92], ['Davi Correia', 64], ['Helena Pires', 87], ['Lorenzo Vieira', 80], ['Lívia Monteiro', 94]],
-    '7efa': [['Miguel Araújo', 97], ['Alícia Ribeiro', 90], ['Bernardo Cardoso', 85], ['Laura Mendes', 93], ['Heitor Gomes', 73], ['Cecília Batista', 88], ['Theo Fernandes', 81], ['Maria Clara Lopes', 95], ['Samuel Duarte', 70], ['Júlia Santana', 86]],
+  // Alunos já existentes nas outras turmas: [nome, frequência, nível]
+  const BASE = {
+    '2emd': [['Lucas Andrade', 96, 8.6], ['Mariana Costa', 91, 8.2], ['Pedro Henrique Rocha', 88, 7.6], ['Beatriz Lima', 84, 7.4], ['Rafael Moura', 79, 6.8], ['Isabela Teixeira', 93, 8.9], ['Gustavo Nunes', 71, 5.6], ['Larissa Campos', 86, 7.9], ['Thiago Fritz', 68, 4.8], ['Arthur Cerqueira', 90, 8.1]],
+    '1emb': [['Sofia Martins', 95, 9.1], ['Enzo Barbosa', 82, 7.2], ['Valentina Ramos', 89, 8.4], ['Matheus Freitas', 77, 6.6], ['Manuela Dias', 92, 8.8], ['Davi Correia', 64, 4.6], ['Helena Pires', 87, 7.7], ['Lorenzo Vieira', 80, 6.9], ['Lívia Monteiro', 94, 9.0]],
+    '7efa': [['Miguel Araújo', 97, 9.3], ['Alícia Ribeiro', 90, 8.5], ['Bernardo Cardoso', 85, 7.8], ['Laura Mendes', 93, 8.9], ['Heitor Gomes', 73, 5.9], ['Cecília Batista', 88, 8.0], ['Theo Fernandes', 81, 7.1], ['Maria Clara Lopes', 95, 9.2], ['Samuel Duarte', 70, 4.4], ['Júlia Santana', 86, 7.6]],
   };
-  const NIVEL = { '2emd': [8.6, 8.2, 7.6, 7.4, 6.8, 8.9, 5.6, 7.9, 4.8, 8.1], '1emb': [9.1, 7.2, 8.4, 6.6, 8.8, 4.6, 7.7, 6.9, 9.0], '7efa': [9.3, 8.5, 7.8, 8.9, 5.9, 8.0, 7.1, 9.2, 4.4, 7.6] };
+  // Nomes brasileiros populares para completar as turmas (nome + sobrenome)
+  const PRIMEIROS = ['Miguel', 'Arthur', 'Heitor', 'Davi', 'Gabriel', 'Bernardo', 'Enzo', 'Lucas', 'Pedro', 'Rafael', 'Gustavo', 'Matheus', 'Guilherme', 'Nicolas', 'Lorenzo', 'Isaac', 'Vitor', 'Caio', 'Leonardo', 'Daniel', 'Eduardo', 'Murilo', 'Vinícius', 'Otávio', 'Benício', 'Joaquim', 'Antônio', 'Francisco', 'Helena', 'Alice', 'Laura', 'Maria Alice', 'Valentina', 'Heloísa', 'Maria Clara', 'Maria Eduarda', 'Sophia', 'Manuela', 'Júlia', 'Isabella', 'Lívia', 'Beatriz', 'Mariana', 'Larissa', 'Ana Clara', 'Giovanna', 'Lara', 'Yasmin', 'Rafaela', 'Letícia', 'Luana', 'Bianca', 'Isadora', 'Clara', 'Melissa', 'Lorena', 'Ana Luiza', 'Vitória'];
+  const SOBRENOMES = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Alves', 'Pereira', 'Lima', 'Gomes', 'Costa', 'Ribeiro', 'Martins', 'Carvalho', 'Almeida', 'Lopes', 'Soares', 'Fernandes', 'Vieira', 'Barbosa', 'Rocha', 'Dias', 'Nascimento', 'Andrade', 'Moreira', 'Nunes', 'Marques', 'Machado', 'Mendes', 'Freitas', 'Cardoso', 'Ramos', 'Gonçalves', 'Santana', 'Teixeira', 'Araújo', 'Pinto', 'Moura', 'Cavalcanti', 'Batista', 'Campos', 'Monteiro', 'Correia', 'Duarte', 'Farias'];
+  const POR_TURMA = 16;
 
   // Padrões de variação por bimestre que somam zero (preservam a média)
   const PAT = [[0, 0, 0, 0], [-.3, .2, .1, 0], [.4, -.2, -.3, .1], [-.5, -.1, .3, .3], [.2, .3, -.4, -.1], [-.2, -.4, .2, .4]];
@@ -86,8 +106,11 @@ window.EC = window.EC || {};
   const NOTAS = {};   // NOTAS[alunoId][disc] = [b1,b2,b3,b4]
   const FREQ = {};    // FREQ[alunoId][disc] = percentual
 
-  function mkMatricula(t, i) { return '2026' + ({ '3ema': 3, '2emd': 2, '1emb': 1, '7efa': 7 })[t] + String(i + 1).padStart(2, '0') + (hash(t + i) % 9); }
+  const SERIE_COD = { '6efb': 6, '7efa': 7, '8efa': 8, '9efc': 9, '1emb': 1, '2emd': 2, '3ema': 3, '3emb': 4 };
+  function mkMatricula(t, i) { return '2026' + SERIE_COD[t] + String(i + 1).padStart(2, '0') + (hash(t + i) % 9); }
   function mkCpf(seed) { const r = rng(seed); let s = ''; for (let i = 0; i < 11; i++) s += Math.floor(r() * 10); return s; }
+  const ANO_NASC = { '6efb': 2014, '7efa': 2013, '8efa': 2012, '9efc': 2011, '1emb': 2010, '2emd': 2009, '3ema': 2008, '3emb': 2008 };
+  const nascDe = (t, i) => `${String(2 + (i * 7) % 26).padStart(2, '0')}/${String(1 + (i * 5) % 12).padStart(2, '0')}/${ANO_NASC[t]}`;
 
   function genNotas(id, turma, nivel, discs, fixed) {
     const r = rng(hash(id));
@@ -105,9 +128,12 @@ window.EC = window.EC || {};
     discs.forEach((d) => { FREQ[id][d] = base >= 100 || base <= 0 ? base : Math.round(clamp(base + (r() - .5) * 10, 0, 100)); });
   }
 
+  const usados = new Set();
+  const T3A = TURMAS.find((t) => t.id === '3ema');
   FIGMA_3EMA.forEach(([nome, freq, mat, foto], i) => {
     const id = 'a' + (i + 1);
-    ALUNOS.push({ id, nome, turma: '3ema', freq, foto, matricula: mkMatricula('3ema', i), cpf: mkCpf(hash(nome)), nasc: `${String(3 + (i * 7) % 25).padStart(2, '0')}/${String(1 + (i * 5) % 12).padStart(2, '0')}/2008`, responsavel: 'Responsável por ' + nome.split(' ')[0] });
+    usados.add(nome);
+    ALUNOS.push({ id, nome, turma: '3ema', freq, foto, matricula: mkMatricula('3ema', i), cpf: mkCpf(hash(nome)), nasc: nascDe('3ema', i), responsavel: 'Responsável por ' + nome.split(' ')[0] });
     const nivel = r1(mat.reduce((a, b) => a + b, 0) / 4);
     let fixed = { mat };
     if (nome === 'Anna Miyamoto') {
@@ -115,17 +141,31 @@ window.EC = window.EC || {};
       Object.keys(ANNA_DISC).forEach((d, k) => { fixed[d] = PAT[k % PAT.length].map((o) => r1(ANNA_DISC[d] + o)); });
       fixed.mat = mat;
     }
-    genNotas(id, '3ema', nivel, TURMAS[0].disciplinas, fixed);
-    genFreq(id, freq, TURMAS[0].disciplinas);
+    genNotas(id, '3ema', nivel, T3A.disciplinas, fixed);
+    genFreq(id, freq, T3A.disciplinas);
   });
   ALUNOS[0].fotoHi = ANNA_HI;
+  Object.values(BASE).forEach((l) => l.forEach(([n]) => usados.add(n)));
 
-  Object.keys(OUTROS).forEach((t) => {
-    const turma = TURMAS.find((x) => x.id === t);
-    OUTROS[t].forEach(([nome, freq], i) => {
+  TURMAS.filter((t) => t.id !== '3ema').forEach((turma) => {
+    const t = turma.id;
+    const gr = rng(hash(t + 'nomes'));
+    const pick = (arr) => arr[Math.floor(gr() * arr.length)];
+    const lista = (BASE[t] || []).slice();
+    while (lista.length < POR_TURMA) {
+      const s1 = pick(SOBRENOMES), s2 = pick(SOBRENOMES);
+      const nome = `${pick(PRIMEIROS)} ${s1}${gr() < 0.5 && s2 !== s1 ? ' ' + s2 : ''}`;
+      if (usados.has(nome)) continue;
+      usados.add(nome);
+      // Frequência e nível simulados; cerca de 1 em 8 alunos fica abaixo de 75%
+      const freq = gr() < 0.13 ? Math.round(52 + gr() * 21) : Math.round(78 + gr() * 22);
+      const nivel = r1(clamp(7.3 + (gr() + gr() + gr() - 1.5) * 2.6, 2.4, 9.8));
+      lista.push([nome, freq, nivel]);
+    }
+    lista.forEach(([nome, freq, nivel], i) => {
       const id = t + '-' + (i + 1);
-      ALUNOS.push({ id, nome, turma: t, freq, foto: null, matricula: mkMatricula(t, i), cpf: mkCpf(hash(nome)), nasc: `${String(2 + (i * 7) % 26).padStart(2, '0')}/${String(1 + (i * 5) % 12).padStart(2, '0')}/${t === '7efa' ? 2013 : t === '1emb' ? 2010 : 2009}`, responsavel: 'Responsável por ' + nome.split(' ')[0] });
-      genNotas(id, t, NIVEL[t][i], turma.disciplinas);
+      ALUNOS.push({ id, nome, turma: t, freq, foto: null, matricula: mkMatricula(t, i), cpf: mkCpf(hash(nome)), nasc: nascDe(t, i), responsavel: 'Responsável por ' + nome.split(' ')[0] });
+      genNotas(id, t, nivel, turma.disciplinas);
       genFreq(id, freq, turma.disciplinas);
     });
   });
@@ -214,5 +254,22 @@ window.EC = window.EC || {};
     ['13:47', 'Carlos Menezes', 'Professor', 'Publicou aviso no mural: 2ºEM - D', 'ok'],
   ];
 
-  EC.data = { DISCIPLINAS, TURMAS, PROFESSORES, ALUNOS, NOTAS, FREQ, ATIVIDADE, HORARIO, USUARIOS_DEMO, AVISOS, EVENTOS, ESTAT, KPIS, FREQ_MENSAL, DISPERSAO, LOGS, rng, hash, clamp, r1 };
+  // Ouvidoria: manifestações de alunos (dias relativos a hoje). de: 'aluno' ou 'escola'
+  const OUVIDORIA = [
+    { id: 'o1', protocolo: 'OUV-2026-0041', alunoId: 'a1', categoria: 'Sugestão', assunto: 'Biblioteca aberta até mais tarde na semana de provas', anonimo: false, status: 'Respondido', msgs: [
+      { de: 'aluno', texto: 'Seria possível a biblioteca ficar aberta até as 18h nas semanas de prova? Muitos alunos do 3º ano ficam para estudar depois da aula.', dias: -4, hora: '19:12' },
+      { de: 'escola', autor: 'Marta Ribeiro', texto: 'Oi, Anna! Levamos a sugestão para a direção e, a partir da próxima semana de provas, a biblioteca vai funcionar até as 18h. Obrigada por sugerir.', dias: -3, hora: '10:05' }] },
+    { id: 'o2', protocolo: 'OUV-2026-0043', alunoId: 'a8', categoria: 'Reclamação', assunto: 'Ar-condicionado da sala 12 pingando', anonimo: false, status: 'Em análise', msgs: [
+      { de: 'aluno', texto: 'O ar-condicionado da sala 12 está pingando em cima das carteiras do fundo desde segunda-feira.', dias: -2, hora: '08:40' },
+      { de: 'escola', autor: 'Marta Ribeiro', texto: 'Obrigada pelo aviso, Gabriela. A manutenção já foi chamada e deve passar na sala até sexta-feira.', dias: -1, hora: '14:22' }] },
+    { id: 'o3', protocolo: 'OUV-2026-0044', alunoId: '2emd-3', categoria: 'Reclamação', assunto: 'Apelidos ofensivos no intervalo', anonimo: true, status: 'Aberto', msgs: [
+      { de: 'aluno', texto: 'Alguns alunos estão colocando apelidos ofensivos em colegas durante o intervalo, perto da cantina. Prefiro não me identificar.', dias: -1, hora: '21:47' }] },
+    { id: 'o4', protocolo: 'OUV-2026-0038', alunoId: '1emb-1', categoria: 'Elogio', assunto: 'Orientação na Feira de Ciências', anonimo: false, status: 'Encerrado', msgs: [
+      { de: 'aluno', texto: 'Queria agradecer à professora Helena pela orientação do nosso grupo na Feira de Ciências. Foi incrível!', dias: -9, hora: '16:30' },
+      { de: 'escola', autor: 'Marta Ribeiro', texto: 'Que bom saber, Sofia! Repassamos o elogio para a professora Helena.', dias: -8, hora: '09:15' }] },
+    { id: 'o5', protocolo: 'OUV-2026-0045', alunoId: 'a6', categoria: 'Dúvida', assunto: 'Segunda chamada da prova de Física', anonimo: false, status: 'Aberto', msgs: [
+      { de: 'aluno', texto: 'Faltei na prova de Física por causa de uma consulta médica e tenho atestado. Como faço para pedir a segunda chamada?', dias: 0, hora: '07:58' }] },
+  ];
+
+  EC.data = { DISCIPLINAS, TURMAS, PROFESSORES, ALUNOS, NOTAS, FREQ, ATIVIDADE, HORARIO, USUARIOS_DEMO, AVISOS, EVENTOS, ESTAT, KPIS, FREQ_MENSAL, DISPERSAO, LOGS, OUVIDORIA, PRIMEIROS, EF, EM, rng, hash, clamp, r1 };
 })();

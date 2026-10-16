@@ -47,33 +47,40 @@ window.EC = window.EC || {};
   EC.bimestreAtual = () => { const m = EC.today().getMonth(); return m < 4 ? 1 : m < 6 ? 2 : m < 9 ? 3 : 4; };
 
   /* ---------------- Consultas ---------------- */
-  EC.turma = (id) => D.TURMAS.map((t) => (S.grades[t.id] ? { ...t, disciplinas: S.grades[t.id] } : t)).find((t) => t.id === id);
-  EC.turmas = () => D.TURMAS.map((t) => EC.turma(t.id));
+  // Turmas e alunos = base simulada + o que foi criado na demonstração (turmasNovas, alunosNovos)
+  ['turmasNovas', 'alunosNovos', 'eventos', 'ouvidoria', 'ouvMsgs', 'ouvStatus'].forEach((k) => { if (!S[k]) S[k] = k === 'ouvMsgs' || k === 'ouvStatus' ? {} : []; });
+  if (!S.alunoEdits) S.alunoEdits = {};
+  EC.turmas = () => D.TURMAS.concat(S.turmasNovas).map((t) => (S.grades[t.id] ? { ...t, disciplinas: S.grades[t.id] } : t));
+  EC.turma = (id) => EC.turmas().find((t) => t.id === id);
   EC.disc = (id) => D.DISCIPLINAS[id];
-  EC.aluno = (id) => D.ALUNOS.find((a) => a.id === id);
-  EC.alunosDaTurma = (t) => D.ALUNOS.filter((a) => a.turma === t);
+  EC.alunos = () => D.ALUNOS.concat(S.alunosNovos).map((a) => (S.alunoEdits[a.id] ? { ...a, ...S.alunoEdits[a.id] } : a));
+  EC.aluno = (id) => EC.alunos().find((a) => a.id === id);
+  EC.alunosDaTurma = (t) => EC.alunos().filter((a) => a.turma === t && a.ativo !== false);
   EC.professorDe = (turma, disc) => D.PROFESSORES.find((p) => p.disc.some(([t, d]) => t === turma && d === disc));
   EC.lecionaProf = (profId, turma, disc) => { const p = D.PROFESSORES.find((x) => x.id === profId); return !!p && p.disc.some(([t, d]) => t === turma && d === disc); };
 
+  // Aluno recém-matriculado ainda não tem notas: null = "sem nota" (exibido como –)
   EC.notas = (alunoId, disc) => {
     const o = S.notas[alunoId + '|' + disc];
-    const base = (D.NOTAS[alunoId] && D.NOTAS[alunoId][disc]) || [0, 0, 0, 0];
+    const base = (D.NOTAS[alunoId] && D.NOTAS[alunoId][disc]) || [null, null, null, null];
     return o ? o.slice() : base.slice();
   };
   EC.setNotas = (alunoId, disc, arr) => { S.notas[alunoId + '|' + disc] = arr; save(); };
   const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
   EC.avg = avg;
-  EC.mediaDisc = (alunoId, disc) => D.r1(avg(EC.notas(alunoId, disc)));
-  EC.mediaGeral = (alunoId) => { const a = EC.aluno(alunoId); const t = EC.turma(a.turma); return D.r1(avg(t.disciplinas.map((d) => EC.mediaDisc(alunoId, d)))); };
+  const media = (arr) => { const v = arr.filter((x) => x != null); return v.length ? D.r1(avg(v)) : null; };
+  EC.mediaDisc = (alunoId, disc) => media(EC.notas(alunoId, disc));
+  EC.mediaGeral = (alunoId) => { const a = EC.aluno(alunoId); const t = EC.turma(a.turma); return t ? media(t.disciplinas.map((d) => EC.mediaDisc(alunoId, d))) : null; };
+  EC.notaCls = (x) => (x == null ? '' : x < 4 ? 'low' : x < 6 ? 'mid' : '');
   EC.freqDisc = (alunoId, disc) => { const f = D.FREQ[alunoId]; return f && f[disc] != null ? f[disc] : EC.aluno(alunoId).freq; };
   EC.aulasDadas = (disc) => Math.round((D.DISCIPLINAS[disc].ch || 80) * 0.78);
   EC.faltas = (alunoId, disc) => Math.round((1 - EC.freqDisc(alunoId, disc) / 100) * EC.aulasDadas(disc));
 
   // Situação: média ≥ 6 aprovado; ≥ 4 recuperação; abaixo disso reprovado
-  EC.situacao = (media) => (media >= 6 ? 'Aprovado' : media >= 4 ? 'Recuperação' : 'Reprovado');
-  EC.sitClass = (s) => ({ Aprovado: 'ok', 'Recuperação': 'warn', Reprovado: 'bad' }[s] || 'neutral');
+  EC.situacao = (media) => (media == null ? 'Em andamento' : media >= 6 ? 'Aprovado' : media >= 4 ? 'Recuperação' : 'Reprovado');
+  EC.sitClass = (s) => ({ Aprovado: 'ok', 'Recuperação': 'warn', Reprovado: 'bad', 'Em andamento': 'info' }[s] || 'neutral');
   // RN-008: frequência < 75% ou média < 5,0 gera alerta
-  EC.emRisco = (alunoId) => EC.aluno(alunoId).freq < 75 || EC.mediaGeral(alunoId) < 5;
+  EC.emRisco = (alunoId) => { const m = EC.mediaGeral(alunoId); return EC.aluno(alunoId).freq < 75 || (m != null && m < 5); };
 
   /* ---------------- Componentes ---------------- */
   EC.initials = (n) => n.split(' ').filter(Boolean).filter((w, i, a) => i === 0 || i === a.length - 1).map((w) => w[0]).join('').toUpperCase();
@@ -144,11 +151,11 @@ window.EC = window.EC || {};
     }));
   };
   EC.toneFreq = (f) => (f >= 75 ? 'ok' : f >= 50 ? 'warn' : 'bad');
-  EC.toneNota = (n) => (n >= 6 ? 'ok' : n >= 4 ? 'warn' : 'bad');
+  EC.toneNota = (n) => (n == null ? 'navy' : n >= 6 ? 'ok' : n >= 4 ? 'warn' : 'bad');
 
   EC.chip = (txt, tone = 'neutral', icon) => `<span class="chip ${tone}">${icon ? EC.icon(icon) : ''}${esc(txt)}</span>`;
-  EC.sitChip = (s) => EC.chip(s, EC.sitClass(s), s === 'Aprovado' ? 'check' : s === 'Reprovado' ? 'x' : 'alert');
-  EC.fmtNota = (n) => n.toFixed(1).replace('.', ',');
+  EC.sitChip = (s) => EC.chip(s, EC.sitClass(s), s === 'Aprovado' ? 'check' : s === 'Reprovado' ? 'x' : s === 'Em andamento' ? 'clock' : 'alert');
+  EC.fmtNota = (n) => (n == null ? '–' : n.toFixed(1).replace('.', ','));
 
   /* ---------------- Toast (Figma: Confirmação) ---------------- */
   EC.toast = (msg, tone = 'ok') => {

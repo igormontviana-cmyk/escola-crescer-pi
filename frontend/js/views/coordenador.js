@@ -6,9 +6,10 @@
 
   const resumoTurma = (t) => {
     const al = EC.alunosDaTurma(t.id);
+    const ms = al.map((a) => EC.mediaGeral(a.id)).filter((m) => m != null);
     return {
       n: al.length,
-      media: al.length ? D.r1(EC.avg(al.map((a) => EC.mediaGeral(a.id)))) : 0,
+      media: ms.length ? D.r1(EC.avg(ms)) : null,
       freq: al.length ? Math.round(EC.avg(al.map((a) => a.freq))) : 0,
       risco: al.filter((a) => EC.emRisco(a.id)).length,
     };
@@ -16,7 +17,8 @@
 
   EC.views.inicio_coordenador = (p, u) => {
     const ts = EC.turmas();
-    const risco = D.ALUNOS.filter((a) => EC.emRisco(a.id));
+    const ativos = EC.alunos().filter((a) => a.ativo !== false);
+    const risco = ativos.filter((a) => EC.emRisco(a.id));
     return {
       title: 'Início',
       html: `
@@ -24,9 +26,9 @@
           <div class="stack" style="gap:24px">
             <div class="page-head flat" style="margin:0"><div><h1>Olá, ${esc(u.nome.split(' ')[0])}</h1><p>Visão geral da coordenação pedagógica.</p></div></div>
             <div class="grid g-4">
-              <a class="card kpi" href="#/usuarios" style="text-decoration:none"><span class="ico">${I('cap')}</span><span class="lab">Alunos</span><span class="val">${D.ALUNOS.length}</span><span class="foot">em ${ts.length} turmas</span></a>
+              <a class="card kpi" href="#/usuarios" style="text-decoration:none"><span class="ico">${I('cap')}</span><span class="lab">Alunos</span><span class="val">${ativos.length}</span><span class="foot">em ${ts.length} turmas</span></a>
               <a class="card kpi" href="#/usuarios" style="text-decoration:none"><span class="ico">${I('users')}</span><span class="lab">Professores</span><span class="val">${D.PROFESSORES.length}</span><span class="foot">ativos</span></a>
-              <a class="card kpi" href="#/turmas" style="text-decoration:none"><span class="ico">${I('layers')}</span><span class="lab">Turmas</span><span class="val">${ts.length}</span><span class="foot">Matutino e Vespertino</span></a>
+              <a class="card kpi" href="#/turmas" style="text-decoration:none"><span class="ico">${I('layers')}</span><span class="lab">Turmas</span><span class="val">${ts.length}</span><span class="foot">6º ano ao Ensino Médio</span></a>
               <a class="card kpi" href="#/disciplinas" style="text-decoration:none"><span class="ico">${I('book')}</span><span class="lab">Disciplinas</span><span class="val">${Object.keys(D.DISCIPLINAS).length}</span><span class="foot">na grade</span></a>
             </div>
             <section class="card">
@@ -49,12 +51,21 @@
 
   /* ---------------- Usuários (RN-001, RN-002, RN-006) ---------------- */
   function todosUsuarios() {
-    const base = []
-      .concat(D.ALUNOS.map((a) => ({ id: a.id, nome: a.nome, perfil: 'aluno', email: a.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(' ').filter((w, i, x) => i === 0 || i === x.length - 1).join('.') + '@aluno.gentemiudacrescer.com', cpf: a.cpf, turma: a.turma, foto: a.foto, ativo: true })))
-      .concat(D.PROFESSORES.map((p) => ({ id: p.id, nome: p.nome, perfil: 'professor', email: p.email, cpf: p.cpf, foto: p.id === 'p1' ? D.USUARIOS_DEMO.professor.foto : null, ativo: true })))
+    // Alunos vêm de EC.alunos() (base + matriculados + edições); demais perfis, da base + S.usuarios
+    const emailAluno = (n) => n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(' ').filter((w, i, x) => i === 0 || i === x.length - 1).join('.') + '@aluno.gentemiudacrescer.com';
+    const alunos = EC.alunos().map((a) => ({ id: a.id, nome: a.nome, perfil: 'aluno', email: a.email || emailAluno(a.nome), cpf: a.cpf, turma: a.turma, foto: a.foto, ativo: a.ativo !== false }));
+    const base = D.PROFESSORES.map((p) => ({ id: p.id, nome: p.nome, perfil: 'professor', email: p.email, cpf: p.cpf, foto: p.id === 'p1' ? D.USUARIOS_DEMO.professor.foto : null, ativo: true }))
       .concat([D.USUARIOS_DEMO.coordenador, D.USUARIOS_DEMO.gestor].map((x) => ({ ...x, ativo: true })));
     const edits = Object.fromEntries(S.usuarios.map((x) => [x.id, x]));
-    return base.map((x) => (edits[x.id] ? { ...x, ...edits[x.id] } : x)).concat(S.usuarios.filter((x) => x.novo));
+    return alunos.concat(base.map((x) => (edits[x.id] ? { ...x, ...edits[x.id] } : x))).concat(S.usuarios.filter((x) => x.novo && x.perfil !== 'aluno'));
+  }
+  function setAtivo(x, ativo) {
+    if (x.perfil === 'aluno') { S.alunoEdits[x.id] = { ...(S.alunoEdits[x.id] || {}), ativo }; }
+    else {
+      const i = S.usuarios.findIndex((y) => y.id === x.id);
+      if (i >= 0) S.usuarios[i] = { ...S.usuarios[i], ativo }; else S.usuarios.push({ id: x.id, ativo });
+    }
+    EC.save();
   }
   const PERFIS = [['aluno', 'Aluno'], ['professor', 'Professor'], ['coordenador', 'Coordenador'], ['gestor', 'Gestor']];
   const PTONE = { aluno: 'info', professor: 'ok', coordenador: 'warn', gestor: 'neutral' };
@@ -116,18 +127,32 @@
                 <td class="tnum">${EC.maskCpf(x.cpf)}</td>
                 <td>${x.perfil === 'aluno' ? esc(EC.turma(x.turma)?.nome || '-') : x.perfil === 'professor' ? (D.PROFESSORES.find((p) => p.id === x.id)?.disc.length || 0) + ' turmas/disciplinas' : 'Escola'}</td>
                 <td>${x.ativo === false ? EC.chip('Inativo', 'neutral') : EC.chip('Ativo', 'ok', 'check')}</td>
-                <td class="r" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-edit="${x.id}" aria-label="Editar ${esc(x.nome)}">${I('edit', 'sm')}</button> <button class="btn btn-ghost btn-sm" data-reset="${x.id}" title="Redefinir senha" aria-label="Redefinir senha de ${esc(x.nome)}">${I('key', 'sm')}</button></td>
+                <td class="r" style="white-space:nowrap"><button class="btn btn-ghost btn-sm" data-edit="${x.id}" title="Editar" aria-label="Editar ${esc(x.nome)}">${I('edit', 'sm')}</button> <button class="btn btn-ghost btn-sm" data-reset="${x.id}" title="Redefinir senha" aria-label="Redefinir senha de ${esc(x.nome)}">${I('key', 'sm')}</button> ${x.id === u.id ? '' : `<button class="btn btn-ghost btn-sm" data-ativo="${x.id}" title="${x.ativo === false ? 'Reativar' : 'Inativar'}" aria-label="${x.ativo === false ? 'Reativar' : 'Inativar'} ${esc(x.nome)}" style="color:${x.ativo === false ? 'var(--ok)' : 'var(--bad)'}">${I('power', 'sm')}</button>`}</td>
               </tr>`).join('') || `<tr><td colspan="6">${EC.empty('Nenhum usuário encontrado.')}</td></tr>`}</tbody>`;
           }
           root.addEventListener('click', async (e) => {
-            const tb = e.target.closest('[data-t]'), ed = e.target.closest('[data-edit]'), rs = e.target.closest('[data-reset]');
+            const tb = e.target.closest('[data-t]'), ed = e.target.closest('[data-edit]'), rs = e.target.closest('[data-reset]'), at = e.target.closest('[data-ativo]');
             if (tb) { tab = tb.dataset.t; draw(); }
+            if (at) {
+              const x = todosUsuarios().find((y) => y.id === at.dataset.ativo);
+              const reativar = x.ativo === false;
+              if (!(await EC.confirm({ title: reativar ? 'Reativar usuário?' : 'Inativar usuário?', text: reativar ? `${x.nome} volta a acessar o sistema${x.perfil === 'aluno' ? ' e reaparece na turma' : ''}.` : `${x.nome} não consegue mais entrar no sistema${x.perfil === 'aluno' ? ' e sai das listas da turma' : ''}. O histórico é mantido.`, ok: reativar ? 'Reativar' : 'Inativar', tone: reativar ? 'primary' : 'danger' }))) return;
+              setAtivo(x, reativar);
+              EC.log(`${reativar ? 'Reativou' : 'Inativou'} usuário: ${x.nome}`);
+              EC.toast(reativar ? 'Usuário reativado' : 'Usuário inativado');
+              draw();
+            }
             if (ed) {
               const x = todosUsuarios().find((y) => y.id === ed.dataset.edit);
               userModal(x, (v) => {
-                const i = S.usuarios.findIndex((y) => y.id === x.id);
-                const rec = { ...(i >= 0 ? S.usuarios[i] : { id: x.id }), nome: v.nome, email: v.email, turma: v.turma || x.turma };
-                if (i >= 0) S.usuarios[i] = rec; else S.usuarios.push(rec);
+                if (x.perfil === 'aluno') {
+                  // Edição do aluno vale para todo o sistema (lista, notas, chamada)
+                  S.alunoEdits[x.id] = { ...(S.alunoEdits[x.id] || {}), nome: v.nome, email: v.email, turma: v.turma || x.turma };
+                } else {
+                  const i = S.usuarios.findIndex((y) => y.id === x.id);
+                  const rec = { ...(i >= 0 ? S.usuarios[i] : { id: x.id }), nome: v.nome, email: v.email };
+                  if (i >= 0) S.usuarios[i] = rec; else S.usuarios.push(rec);
+                }
                 EC.save(); EC.log('Editou usuário: ' + v.nome); EC.toast('Usuário atualizado'); draw();
               });
             }
@@ -138,7 +163,9 @@
           });
           root.querySelector('#novo').addEventListener('click', () => userModal(null, (v) => {
             if (todosUsuarios().some((y) => y.cpf === v.cpf)) { EC.toast('Já existe um usuário com esse CPF.', 'err'); return; }
-            S.usuarios.push({ id: 'n' + Date.now(), novo: true, ativo: true, ...v });
+            // Aluno cadastrado aqui entra de verdade na turma (lista, notas, chamada, boletim)
+            if (v.perfil === 'aluno') S.alunosNovos.push({ id: 'n' + Date.now().toString(36), nome: v.nome, email: v.email, turma: v.turma, cpf: v.cpf, freq: 100, foto: null, nasc: '-', responsavel: 'Não informado', matricula: '2026' + String(Date.now()).slice(-5), novo: true });
+            else S.usuarios.push({ id: 'n' + Date.now(), novo: true, ativo: true, ...v });
             EC.save(); EC.log(`Cadastrou usuário: ${v.nome} (${EC.perfilNome(v.perfil)})`); EC.toast('Usuário cadastrado com sucesso'); tab = v.perfil; draw();
           }));
           uq.addEventListener('input', EC.debounce(draw, 120));
@@ -150,22 +177,26 @@
 
   /* ---------------- Turmas (RN-003) ---------------- */
   EC.route('/turmas', {
-    title: 'Turmas', roles: ['coordenador'],
-    render() {
+    title: 'Turmas', roles: ['coordenador', 'gestor', 'professor'], nav: '/turmas',
+    render(p, u) {
       return {
-        html: `<div class="page-head"><div><h1>Turmas</h1><p>Grade curricular por turma (tabela associativa Turma_Disciplina).</p></div></div>
+        html: `<div class="page-head"><div><h1>Turmas</h1><p>${EC.turmas().length} turmas · grade curricular por turma (Turma_Disciplina).</p></div>
+            <div class="row wrap"><button class="btn btn-ghost" id="novo-aluno">${I('userPlus', 'sm')} Cadastrar aluno</button><button class="btn btn-primary" id="nova-turma">${I('plus', 'sm')} Nova turma</button></div></div>
           <div class="grid g-2">${EC.turmas().map((t, i) => { const r = resumoTurma(t); return `
             <article class="card turma-card" style="animation:rise .4s ${i * 60}ms var(--ease) both">
-              <div class="row" style="justify-content:space-between;align-items:flex-start"><div><h3>${esc(t.nome)}</h3><p class="muted" style="font-size:14px">${t.serie} · ${t.turno} · ${t.sala}</p></div>${r.risco ? EC.chip(r.risco + ' em risco', 'bad', 'warn') : EC.chip('Sem alertas', 'ok', 'check')}</div>
+              <div class="row" style="justify-content:space-between;align-items:flex-start"><div><h3>${esc(t.nome)} ${t.criadaPor ? EC.chip('Nova', 'info') : ''}</h3><p class="muted" style="font-size:14px">${t.serie} · ${t.turno} · ${t.sala}</p></div>${r.risco ? EC.chip(r.risco + ' em risco', 'bad', 'warn') : EC.chip('Sem alertas', 'ok', 'check')}</div>
               <div class="row" style="gap:28px">
                 <div><small class="muted">Alunos</small><div style="font-size:24px;font-weight:900;color:var(--ink)">${r.n}</div></div>
                 <div><small class="muted">Média</small><div style="font-size:24px;font-weight:900;color:var(--ink)" class="tnum">${EC.fmtNota(r.media)}</div></div>
                 <div><small class="muted">Frequência</small><div style="font-size:24px;font-weight:900;color:var(--ink)" class="tnum">${r.freq}%</div></div>
               </div>
               <div><small class="muted" style="font-weight:700">Grade curricular (${t.disciplinas.length})</small><div class="tags" style="margin-top:6px">${t.disciplinas.map((d) => `<span class="tag">${esc(EC.disc(d).curto)}</span>`).join('')}</div></div>
-              <div class="row wrap" style="margin-top:4px"><button class="btn btn-primary btn-sm" data-grade="${t.id}">${I('edit', 'sm')} Editar grade</button><a class="btn btn-ghost btn-sm" href="#/alunos?t=${t.id}">${I('users', 'sm')} Ver alunos</a></div>
+              <div class="row wrap" style="margin-top:4px"><button class="btn btn-primary btn-sm" data-grade="${t.id}">${I('edit', 'sm')} Editar grade</button><a class="btn btn-ghost btn-sm" href="#/alunos?t=${t.id}">${I('users', 'sm')} Ver alunos</a><button class="btn btn-ghost btn-sm" data-add="${t.id}">${I('userPlus', 'sm')} Matricular</button></div>
             </article>`; }).join('')}</div>`,
         after(root) {
+          root.querySelector('#nova-turma').addEventListener('click', () => EC.novaTurmaModal(u, () => EC.render()));
+          root.querySelector('#novo-aluno').addEventListener('click', () => EC.novoAlunoModal(u, '3ema', () => EC.render()));
+          root.querySelectorAll('[data-add]').forEach((b) => b.addEventListener('click', () => EC.novoAlunoModal(u, b.dataset.add, () => EC.render())));
           root.querySelectorAll('[data-grade]').forEach((b) => b.addEventListener('click', () => {
             const t = EC.turma(b.dataset.grade);
             EC.modal(`${EC.modalHead('Grade curricular · ' + t.nome, 'Marque as disciplinas ministradas nesta turma.')}

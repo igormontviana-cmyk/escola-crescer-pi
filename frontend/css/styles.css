@@ -650,3 +650,36 @@ table.att tbody tr.present td { background: #f4fbf6; }
   body { background: #fff; }
   .card { box-shadow: none; }
 }
+
+/* ---------- Chamada de qualquer turma ---------- */
+.quick-att { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 20px; margin-bottom: 28px; }
+.quick-att > div:first-child { display: flex; flex-direction: column; margin-right: auto; }
+.quick-att > div:first-child b { color: var(--ink); }
+.quick-att > div:first-child .muted { font-size: 13px; }
+.quick-att .input { width: auto; }
+
+/* ---------- Ouvidoria ---------- */
+.ticket { display: flex; flex-direction: column; gap: 8px; padding: 18px 20px; text-decoration: none !important; color: inherit; transition: transform .2s var(--ease), box-shadow .2s; animation: rise .35s var(--ease) both; }
+.ticket:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
+.ticket h4 { font-size: 17px; }
+.ticket p { font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.chat { display: flex; flex-direction: column; gap: 14px; max-width: 860px; padding: 8px 0 4px; }
+.msg { display: flex; flex-direction: column; align-items: flex-start; max-width: 78%; animation: rise .3s var(--ease) both; }
+.msg.mine { align-self: flex-end; align-items: flex-end; }
+.msg .bubble { background: #fff; border: 1px solid var(--line); border-radius: 16px 16px 16px 4px; padding: 12px 16px; font-size: 15px; line-height: 1.5; color: var(--text); box-shadow: var(--sh-xs); white-space: pre-wrap; }
+.msg.mine .bubble { background: var(--navy-900); border-color: var(--navy-900); color: #fff; border-radius: 16px 16px 4px 16px; }
+.msg small { font-size: 12px; color: var(--muted); margin-top: 4px; padding: 0 4px; }
+.composer.card { max-width: 860px; margin-top: 20px; }
+.composer textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-sm); padding: 12px; min-height: 84px; resize: vertical; outline: none; font-size: 15px; }
+.composer textarea:focus { border-color: var(--navy-600); box-shadow: 0 0 0 3px rgba(26, 95, 168, .15); }
+.types-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.type-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); font-size: 14px; font-weight: 700; color: var(--muted); cursor: pointer; transition: all .15s; }
+.type-pill input { position: absolute; opacity: 0; pointer-events: none; }
+.type-pill:has(input:checked) { background: var(--navy-900); border-color: var(--navy-900); color: #fff; }
+.type-pill:has(input:focus-visible) { outline: 3px solid rgba(26, 95, 168, .45); outline-offset: 2px; }
+.anon { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-md); background: var(--gray-50); border: 1px solid var(--line); cursor: pointer; }
+.anon b { display: block; color: var(--ink); font-size: 14px; }
+.anon small { display: block; color: var(--muted); font-size: 13px; }
+
+/* ---------- Menu "Mais" (mobile, perfis com mais de 5 itens) ---------- */
+.more-sheet { display: none; }

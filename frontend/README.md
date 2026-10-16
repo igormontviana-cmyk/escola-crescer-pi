@@ -25,11 +25,14 @@ Para voltar os dados ao estado original: menu do usuário (canto superior direit
 
 ## O que tem em cada perfil
 
-- **Professor** (telas do Figma): Página Principal (avisos, calendário, próximos eventos), Lista de Alunos, Detalhes do aluno + Ocorrência, Notas (turma > matéria > tabela por bimestre, com edição), Chamada (mês > aula > lista de presença), Avaliações com peso (RN-005) e publicação no boletim.
-- **Aluno** (RF05): Início, Boletim, Frequência por disciplina com alerta abaixo de 75% (RN-008), Mural.
-- **Coordenação** (RF02): visão das turmas, Usuários (RN-001, RN-002), Turmas e grade curricular (RN-003), Disciplinas.
-- **Gestor** (RF07, RF08): Dashboard de KPIs com Chart.js, Relatórios com média e desvio padrão (exporta CSV), Alunos em risco, Auditoria LGPD (RN-009).
-- **Todos:** Perguntas frequentes, Mural (RF06), busca, notificações, bloqueio por perfil (RN-007).
+- **Professor** (telas do Figma): Página Principal (avisos, calendário com criação de eventos, próximos eventos), Lista de Alunos, Detalhes do aluno + Ocorrência, Notas (turma > matéria > tabela por bimestre, com edição), Chamada (aulas do mês + chamada de qualquer turma), Avaliações com peso (RN-005) e publicação no boletim. Acessa e edita todas as turmas.
+- **Aluno** (RF05): Início, Boletim, Frequência por disciplina com alerta abaixo de 75% (RN-008), Ouvidoria (reclamação, sugestão, elogio ou dúvida, com opção anônima), Mural.
+- **Coordenação** (RF02): visão das turmas, Usuários (cadastro, edição, inativação; RN-001, RN-002), Turmas e grade curricular (RN-003), Ouvidoria (responder e mudar status), Disciplinas.
+- **Gestor** (RF07, RF08): Dashboard de KPIs com Chart.js, Relatórios com média e desvio padrão (exporta CSV), Alunos em risco, Ouvidoria, Turmas, Auditoria LGPD (RN-009).
+- **Professor, Coordenação e Gestor:** criar turma e matricular aluno. O aluno novo entra na lista, nas notas, na chamada e no boletim.
+- **Todos:** Perguntas frequentes, Mural (RF06, autor pode excluir o próprio aviso), busca, notificações, bloqueio por perfil (RN-007).
+
+Dados de demonstração: 8 turmas (6º ano ao 3º ano do Ensino Médio), 125 alunos com nomes fictícios e 7 professores.
 
 ## Versão mobile
 
