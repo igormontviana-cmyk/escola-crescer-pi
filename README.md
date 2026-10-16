@@ -12,9 +12,10 @@ Repositório técnico focado em backend, SQL e estrutura de pastas, desenvolvido
 
 ---
 
-## Protótipo de Interface
+## Protótipo de Interface e versão web navegavel
 
-🔗 **Figma:** https://www.figma.com/proto/pTaUjFPVdbAJOu1E5UMvge/projeto-integrativo?node-id=202-123&starting-point-node-id=202%3A123&t=8YZ4ZlCdkTQjPb18-
+🔗 **Figma:** (versão antiga) https://www.figma.com/proto/pTaUjFPVdbAJOu1E5UMvge/projeto-integrativo?node-id=202-123&starting-point-node-id=202%3A123&t=8YZ4ZlCdkTQjPb18-
+🔗 **versão web**  https://escola-gente-miuda-crescer.vercel.app/
 
 
 ---
