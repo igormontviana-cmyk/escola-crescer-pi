@@ -75,7 +75,7 @@ window.EC = window.EC || {};
     ['Elisa Barbosa', 80, [7.8, 8.5, 8.0, 8.2], SP(603)],
     ['Felipe Lima', 76, [7.2, 6.9, 7.5, 7.1], null],
     ['Henrique Silva', 75, [7.0, 7.3, 7.8, 8.0], SP(791)],
-    ['Samuel da Cunha', 65, [6.5, 6.8, 6.7, 8.0], SP(885)],
+    ['Samuel da Cunha', 65, [6.5, 6.8, 6.7, 8.0], null],
     ['Gabriela Carvalho', 46, [4.8, 4.3, 4.2, 4.5], SP(980)],
     ['João Pereira', 44, [5.0, 4.5, 4.6, 4.3], null],
     ['João Manoel Carvalho', 30, [3.0, 3.2, 2.8, 3.1], SP(1170)],
@@ -146,6 +146,9 @@ window.EC = window.EC || {};
     genFreq(id, freq, T3A.disciplinas);
   });
   ALUNOS[0].fotoHi = ANNA_HI;
+  // Alice (aluna de demonstração): foto própria em alta resolução (640 px), usada no avatar e nos detalhes
+  ALUNOS[1].foto = { src: 'assets/img/alice.jpg', w: 640, h: 640, cx: 330, cy: 270, d: 540 };
+  ALUNOS[1].fotoHi = { src: 'assets/img/alice.jpg', w: 640, h: 640, x: 40, y: 0, s: 600 };
   Object.values(BASE).forEach((l) => l.forEach(([n]) => usados.add(n)));
 
   // Calibração: com os alunos do protótipo, exatamente 3 alunos gerados ficam em risco (RN-008) e cerca de
