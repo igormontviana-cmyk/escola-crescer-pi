@@ -172,6 +172,7 @@ window.EC = window.EC || {};
 
   // Atividade recente (Figma: log do aluno)
   const ATIVIDADE = {
+    a2: ['[07:45] Alice marcou presença em Matemática Avançada', '[08:45] Alice marcou presença em História', '[10:45] Alice marcou presença em Biologia', '[11:45] Alice marcou presença em Língua Port. e Redação', '[18:37] Alice enviou uma atividade de Geografia', '[20:37] Alice enviou uma atividade de Matemática Avançada'],
     a1: ['[07:45] Anna marcou presença em Matemática Avançada', '[08:45] Anna marcou presença em História', '[10:45] Anna marcou presença em Biologia', '[11:45] Anna marcou presença em Língua Port. e Redação', '[18:37] Anna enviou uma atividade de Geografia', '[20:37] Anna enviou uma atividade de Matemática Avançada'],
   };
 
@@ -186,7 +187,7 @@ window.EC = window.EC || {};
 
   const USUARIOS_DEMO = {
     professor: { perfil: 'professor', id: 'p1', nome: 'Ricardo Almeida', email: 'ricardo.almeida@gentemiudacrescer.com', cpf: '12345678909', foto: { src: 'assets/img/prof-sprite.png', w: 1414, h: 900, cx: 1158, cy: 46, d: 32 } },
-    aluno: { perfil: 'aluno', id: 'a1', nome: 'Anna Miyamoto', email: 'anna.miyamoto@aluno.gentemiudacrescer.com', cpf: ALUNOS[0].cpf, foto: ALUNOS[0].foto },
+    aluno: { perfil: 'aluno', id: 'a2', nome: 'Alice Fernandes', email: 'alice.fernandes@aluno.gentemiudacrescer.com', cpf: ALUNOS[1].cpf, foto: ALUNOS[1].foto },
     coordenador: { perfil: 'coordenador', id: 'c1', nome: 'Marta Ribeiro', email: 'marta.ribeiro@gentemiudacrescer.com', cpf: '98765432100' },
     gestor: { perfil: 'gestor', id: 'g1', nome: 'Paulo Duarte', email: 'paulo.duarte@gentemiudacrescer.com', cpf: '45678912366' },
   };
@@ -256,9 +257,9 @@ window.EC = window.EC || {};
 
   // Ouvidoria: manifestações de alunos (dias relativos a hoje). de: 'aluno' ou 'escola'
   const OUVIDORIA = [
-    { id: 'o1', protocolo: 'OUV-2026-0041', alunoId: 'a1', categoria: 'Sugestão', assunto: 'Biblioteca aberta até mais tarde na semana de provas', anonimo: false, status: 'Respondido', msgs: [
+    { id: 'o1', protocolo: 'OUV-2026-0041', alunoId: 'a2', categoria: 'Sugestão', assunto: 'Biblioteca aberta até mais tarde na semana de provas', anonimo: false, status: 'Respondido', msgs: [
       { de: 'aluno', texto: 'Seria possível a biblioteca ficar aberta até as 18h nas semanas de prova? Muitos alunos do 3º ano ficam para estudar depois da aula.', dias: -4, hora: '19:12' },
-      { de: 'escola', autor: 'Marta Ribeiro', texto: 'Oi, Anna! Levamos a sugestão para a direção e, a partir da próxima semana de provas, a biblioteca vai funcionar até as 18h. Obrigada por sugerir.', dias: -3, hora: '10:05' }] },
+      { de: 'escola', autor: 'Marta Ribeiro', texto: 'Oi, Alice! Levamos a sugestão para a direção e, a partir da próxima semana de provas, a biblioteca vai funcionar até as 18h. Obrigada por sugerir.', dias: -3, hora: '10:05' }] },
     { id: 'o2', protocolo: 'OUV-2026-0043', alunoId: 'a8', categoria: 'Reclamação', assunto: 'Ar-condicionado da sala 12 pingando', anonimo: false, status: 'Em análise', msgs: [
       { de: 'aluno', texto: 'O ar-condicionado da sala 12 está pingando em cima das carteiras do fundo desde segunda-feira.', dias: -2, hora: '08:40' },
       { de: 'escola', autor: 'Marta Ribeiro', texto: 'Obrigada pelo aviso, Gabriela. A manutenção já foi chamada e deve passar na sala até sexta-feira.', dias: -1, hora: '14:22' }] },

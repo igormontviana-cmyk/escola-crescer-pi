@@ -19,7 +19,7 @@ Na tela de login, use os botões de **Acesso de demonstração** (Aluno, Profess
 | Professor | Ricardo Almeida | 12345678909 |
 | Coordenação | Marta Ribeiro | 98765432100 |
 | Gestor | Paulo Duarte | 45678912366 |
-| Aluno | Anna Miyamoto | botão "Aluno" |
+| Aluno | Alice Fernandes | 47051298132 |
 
 Para voltar os dados ao estado original: menu do usuário (canto superior direito) > **Restaurar dados de demonstração**.
 
