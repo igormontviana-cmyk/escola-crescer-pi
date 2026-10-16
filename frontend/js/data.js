@@ -253,10 +253,10 @@ window.EC = window.EC || {};
     ['08:02', 'Ricardo Almeida', 'Professor', 'Login realizado', 'ok'],
     ['08:05', 'Ricardo Almeida', 'Professor', 'Registrou chamada: Matemática Avançada, 3ºEM - A', 'ok'],
     ['08:41', 'Marta Ribeiro', 'Coordenador', 'Atualizou grade curricular: 1ºEM - B', 'ok'],
-    ['09:12', 'Anna Miyamoto', 'Aluno', 'Consultou boletim', 'ok'],
+    ['09:12', 'Alice Fernandes', 'Aluno', 'Consultou boletim', 'ok'],
     ['09:30', 'desconhecido', '-', 'Tentativa de login com senha inválida', 'bad'],
     ['10:03', 'Helena Prado', 'Professor', 'Lançou notas: Biologia, 2ºEM - D (2º BIM)', 'ok'],
-    ['10:15', 'Anna Miyamoto', 'Aluno', 'Tentou acessar /notas (sem permissão: RN-007)', 'warn'],
+    ['10:15', 'Alice Fernandes', 'Aluno', 'Tentou acessar /notas (sem permissão: RN-007)', 'warn'],
     ['11:20', 'Paulo Duarte', 'Gestor', 'Exportou relatório estatístico', 'ok'],
     ['13:47', 'Carlos Menezes', 'Professor', 'Publicou aviso no mural: 2ºEM - D', 'ok'],
   ];
