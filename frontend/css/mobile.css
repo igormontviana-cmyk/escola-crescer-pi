@@ -197,7 +197,11 @@
   .hero > .ring-wrap { align-self: flex-start; }
   .g-3 > :last-child:nth-child(odd), .g-4 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .kpi .chip { white-space: normal; }
-  .login { padding: 20px 12px 56px; }
+  /* Login mobile: ajuda, cartão e rodapé em fluxo normal (sem sobreposição em telas baixas) */
+  .login { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 16px; padding: 12px 12px 20px; min-height: 100dvh; }
+  .login-help { position: static; align-self: flex-end; flex: none; width: 44px; height: 44px; }
+  .login-card { flex: none; margin: auto 0; }
+  .login-foot { position: static; flex: none; padding: 0 8px; }
   .demo-grid button { padding: 10px 4px; }
   .uline-field input { font-size: 16px; } /* evita zoom automático no iOS */
   .search input, .input, .field select, .field textarea { font-size: 16px; }
