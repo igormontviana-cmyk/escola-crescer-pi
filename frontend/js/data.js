@@ -98,6 +98,7 @@ window.EC = window.EC || {};
   const PRIMEIROS = ['Miguel', 'Arthur', 'Heitor', 'Davi', 'Gabriel', 'Bernardo', 'Enzo', 'Lucas', 'Pedro', 'Rafael', 'Gustavo', 'Matheus', 'Guilherme', 'Nicolas', 'Lorenzo', 'Isaac', 'Vitor', 'Caio', 'Leonardo', 'Daniel', 'Eduardo', 'Murilo', 'Vinícius', 'Otávio', 'Benício', 'Joaquim', 'Antônio', 'Francisco', 'Helena', 'Alice', 'Laura', 'Maria Alice', 'Valentina', 'Heloísa', 'Maria Clara', 'Maria Eduarda', 'Sophia', 'Manuela', 'Júlia', 'Isabella', 'Lívia', 'Beatriz', 'Mariana', 'Larissa', 'Ana Clara', 'Giovanna', 'Lara', 'Yasmin', 'Rafaela', 'Letícia', 'Luana', 'Bianca', 'Isadora', 'Clara', 'Melissa', 'Lorena', 'Ana Luiza', 'Vitória'];
   const SOBRENOMES = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Ferreira', 'Alves', 'Pereira', 'Lima', 'Gomes', 'Costa', 'Ribeiro', 'Martins', 'Carvalho', 'Almeida', 'Lopes', 'Soares', 'Fernandes', 'Vieira', 'Barbosa', 'Rocha', 'Dias', 'Nascimento', 'Andrade', 'Moreira', 'Nunes', 'Marques', 'Machado', 'Mendes', 'Freitas', 'Cardoso', 'Ramos', 'Gonçalves', 'Santana', 'Teixeira', 'Araújo', 'Pinto', 'Moura', 'Cavalcanti', 'Batista', 'Campos', 'Monteiro', 'Correia', 'Duarte', 'Farias'];
   const POR_TURMA = 16;
+  const RISCO_A = 6, RISCO_B = 38, RISCO_C = 71, P_REC = 0.27, FREQ_MIN = 75, FREQ_EXP = 1.2;
 
   // Padrões de variação por bimestre que somam zero (preservam a média)
   const PAT = [[0, 0, 0, 0], [-.3, .2, .1, 0], [.4, -.2, -.3, .1], [-.5, -.1, .3, .3], [.2, .3, -.4, -.1], [-.2, -.4, .2, .4]];
@@ -147,6 +148,11 @@ window.EC = window.EC || {};
   ALUNOS[0].fotoHi = ANNA_HI;
   Object.values(BASE).forEach((l) => l.forEach(([n]) => usados.add(n)));
 
+  // Calibração: com os alunos do protótipo, exatamente 3 alunos gerados ficam em risco (RN-008) e cerca de
+  // 1 em 6 fica em recuperação. Assim os indicadores calculados fecham nos valores simulados do item 22 do PI
+  // (aprovação 78%, frequência média 83%, alunos em risco 12%).
+  const RISCO_GERADOS = new Set([RISCO_A, RISCO_B, RISCO_C]);
+  let gerados = 0;
   TURMAS.filter((t) => t.id !== '3ema').forEach((turma) => {
     const t = turma.id;
     const gr = rng(hash(t + 'nomes'));
@@ -157,9 +163,9 @@ window.EC = window.EC || {};
       const nome = `${pick(PRIMEIROS)} ${s1}${gr() < 0.5 && s2 !== s1 ? ' ' + s2 : ''}`;
       if (usados.has(nome)) continue;
       usados.add(nome);
-      // Frequência e nível simulados; cerca de 1 em 8 alunos fica abaixo de 75%
-      const freq = gr() < 0.13 ? Math.round(52 + gr() * 21) : Math.round(78 + gr() * 22);
-      const nivel = r1(clamp(7.3 + (gr() + gr() + gr() - 1.5) * 2.6, 2.4, 9.8));
+      const emRisco = RISCO_GERADOS.has(gerados++);
+      const freq = emRisco ? Math.round(58 + gr() * 15) : Math.round(FREQ_MIN + Math.pow(gr(), FREQ_EXP) * (100 - FREQ_MIN));
+      const nivel = gr() < P_REC ? r1(5.4 + gr() * 0.5) : r1(6.5 + gr() * 3.1);
       lista.push([nome, freq, nivel]);
     }
     lista.forEach(([nome, freq, nivel], i) => {

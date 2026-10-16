@@ -144,7 +144,16 @@
       root.querySelector('#novo-aviso').addEventListener('click', () => EC.publicarAviso(u, EC.render));
     },
   });
-  EC.route('/inicio', { title: 'Início', render: (p, u) => EC.views['inicio_' + u.perfil](p, u) });
+  // Cada perfil tem a sua página inicial; o Gestor abre direto no Dashboard
+  EC.route('/inicio', {
+    title: 'Início',
+    render(p, u) {
+      const view = EC.views['inicio_' + u.perfil];
+      if (view) return view(p, u);
+      setTimeout(() => EC.go(EC.home(u)), 0);
+      return { html: '' };
+    },
+  });
 
   /* ---------------- Lista de Alunos ---------------- */
   EC.route('/alunos', {

@@ -55,13 +55,20 @@
 
   function dadosDashboard(turma) {
     if (turma === 'todas') {
+      // Indicadores calculados sobre todos os alunos ativos; os dados simulados são calibrados para fechar
+      // nos valores do item 22 do PI (aprovação 78%, frequência 83%, risco 12%). A correlação segue a série simulada.
+      const todos = EC.alunos().filter((a) => a.ativo !== false);
+      const nt = todos.length || 1;
+      const cn = todos.map((a) => EC.mediaGeral(a.id)).filter((m) => m != null);
+      const pct = (s) => Math.round((cn.filter((m) => EC.situacao(m) === s).length / nt) * 100);
+      const emRisco = todos.filter((a) => EC.emRisco(a.id));
       return {
-        k: D.KPIS,
-        sit: [['Aprovados', 78, 'ok'], ['Recuperação', 10, 'warn'], ['Reprovados', 12, 'bad']],
+        k: { aprovacao: pct('Aprovado'), frequencia: Math.round(EC.avg(todos.map((a) => a.freq))), risco: Math.round((emRisco.length / nt) * 100), correlacao: D.KPIS.correlacao },
+        sit: [['Aprovados', pct('Aprovado'), 'ok'], ['Recuperação', pct('Recuperação'), 'warn'], ['Reprovados', pct('Reprovado'), 'bad']],
         bars: D.ESTAT.map((e) => [e.disc, e.media]),
         line: D.FREQ_MENSAL,
         pts: D.DISPERSAO,
-        risco: EC.alunos().filter((a) => a.ativo !== false && EC.emRisco(a.id)),
+        risco: emRisco,
       };
     }
     const t = EC.turma(turma), al = EC.alunosDaTurma(turma);
